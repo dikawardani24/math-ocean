@@ -145,24 +145,49 @@ class KecrekanController extends ChangeNotifier {
 
   void reset() => resetTo(initialCount);
 
-  /// The bead under [local] inside a view of [size], if the frame lets the ray
-  /// through to it.
-  KecrekanBead? beadAt(Offset local, Size size) {
-    final camera = _camera;
-    if (!ready || camera == null) return null;
-    final hit = scene.raycast(camera.screenPointToRay(local, size));
-    if (hit == null) return null;
-    return _beadsByName[hit.node.name];
+  /// How far, in logical pixels, a finger may be from a bead's centre and
+  /// still grab it. The beads themselves are never enlarged.
+  static double pickRadiusFor(Size size) {
+    final shortest = size.isEmpty ? 360.0 : size.shortestSide;
+    return (shortest * 0.05).clamp(22.0, 32.0);
   }
 
-  /// World X where the pointer ray crosses the bead plane.
-  double? planeX(Offset local, Size size) {
+  /// The bead nearest [local] in screen space, within [radius].
+  ///
+  /// Screen-space picking is deliberately forgiving: the projected bead is a
+  /// handful of pixels wide, and a child aiming at a bead should not have to
+  /// land on its exact silhouette. When [rod] is supplied only beads on that
+  /// rod are considered, which is how a drag stays on the row it started on.
+  KecrekanBead? beadAt(Offset local, Size size, {int? rod, double? radius}) {
+    final camera = _camera;
+    if (!ready || camera == null || size.isEmpty) return null;
+    final limit = radius ?? pickRadiusFor(size);
+    KecrekanBead? best;
+    var bestDistance = limit;
+    for (final bead in beads) {
+      if (rod != null && bead.rod != rod) continue;
+      final screen = camera.worldToScreen(
+        bead.node.globalTransform.getTranslation(),
+        size,
+      );
+      if (screen == null) continue;
+      final distance = (screen - local).distance;
+      if (distance <= bestDistance) {
+        bestDistance = distance;
+        best = bead;
+      }
+    }
+    return best;
+  }
+
+  /// World X where the pointer ray crosses the plane at [z].
+  double? planeX(Offset local, Size size, {double z = 0}) {
     final camera = _camera;
     if (!ready || camera == null) return null;
     final ray = camera.screenPointToRay(local, size);
     final dz = ray.direction.z;
     if (dz.abs() < 1e-5) return null;
-    final t = -ray.origin.z / dz;
+    final t = (z - ray.origin.z) / dz;
     if (t < 0) return null;
     return ray.origin.x + ray.direction.x * t;
   }
@@ -172,9 +197,16 @@ class KecrekanController extends ChangeNotifier {
   int? tapAt(Offset local, Size size) {
     final bead = beadAt(local, size);
     if (bead == null) return null;
-    final count = math.countFor(bead.rod);
-    final counted = bead.index >= KecrekanMath.beadsPerRod - count;
-    setRowCount(bead.rod, count + (counted ? -1 : 1));
+    return toggleBead(bead);
+  }
+
+  /// Moves exactly one bead on [bead]'s row: counted beads go back, uncounted
+  /// beads join the counted group.
+  int toggleBead(KecrekanBead bead) {
+    setRowCount(
+      bead.rod,
+      KecrekanMath.toggledCount(math.countFor(bead.rod), bead.index),
+    );
     return math.countFor(bead.rod);
   }
 
@@ -196,15 +228,19 @@ class KecrekanController extends ChangeNotifier {
     for (final bead in beads) {
       final target = KecrekanMath.beadX(bead.index, math.countFor(bead.rod));
       final dx = target - bead.x;
-      if (dx.abs() < 0.0004 && bead.velocity.abs() < 0.004) {
+      if (dx.abs() < 0.0015 && bead.velocity.abs() < 0.02) {
         if (bead.x != target) {
           bead.x = target;
           bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
         }
         continue;
       }
-      bead.velocity += dx * 240 * dt;
-      bead.velocity *= dm.exp(-19 * dt);
+      // Near-critical damping: the bead arrives without bouncing into its
+      // neighbour, and the velocity ceiling keeps a fast flick from jumping
+      // past a slot in one frame.
+      bead.velocity += dx * 260 * dt;
+      bead.velocity *= dm.exp(-31 * dt);
+      bead.velocity = bead.velocity.clamp(-12.0, 12.0);
       bead.x += bead.velocity * dt;
       bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
     }

@@ -58,6 +58,39 @@ class KecrekanMath {
     return rightX - index * spacing;
   }
 
+  /// A tap on [index] moves exactly one bead: counted beads go back, and
+  /// uncounted beads join the counted group.
+  static int toggledCount(int count, int index) {
+    final counted = index >= beadsPerRod - count;
+    return (count + (counted ? -1 : 1)).clamp(0, beadsPerRod);
+  }
+
+  /// The row count implied by dragging a bead [dx] world units from where the
+  /// drag began.
+  ///
+  /// The result is anchored to [startCount], not accumulated frame by frame, so
+  /// reversing direction retraces exactly the same counts and a slow drag can
+  /// never drift. Each step needs half a bead of travel plus a small dead band
+  /// [hysteresis], which stops a finger resting on a threshold from flickering
+  /// between two counts.
+  static int dragCount({
+    required int startCount,
+    required double dx,
+    double hysteresis = 0.12,
+  }) {
+    final raw = startCount - dx / spacing;
+    var count = startCount;
+    // Step one slot at a time. A single huge jump would skip the intermediate
+    // bead positions the spring animates through.
+    while (raw > count + 0.5 + hysteresis) {
+      count++;
+    }
+    while (raw < count - 0.5 - hysteresis) {
+      count--;
+    }
+    return count.clamp(0, beadsPerRod);
+  }
+
   /// The bead index that would be the next one counted (adjacent to the gap).
   static int nextUncountedIndex(int count) =>
       count >= beadsPerRod ? -1 : beadsPerRod - 1 - count;

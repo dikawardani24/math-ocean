@@ -37,9 +37,11 @@ class KecrekanStage extends StatefulWidget {
 
 class _KecrekanStageState extends State<KecrekanStage> {
   Size _size = Size.zero;
+  KecrekanBead? _downBead;
   int? _dragRod;
   int _dragStartCount = 0;
   double _dragStartX = 0;
+  double _dragZ = 0;
   bool _touched = false;
   bool _started = false;
 
@@ -63,10 +65,16 @@ class _KecrekanStageState extends State<KecrekanStage> {
 
   void _tap(TapUpDetails details) {
     if (!widget.interactive) return;
+    // Always use the bead that was under the finger when it went down, not the
+    // one under it when it lifted: a tap that wobbles must not toggle a
+    // neighbour.
+    final bead =
+        _downBead ?? widget.controller.beadAt(details.localPosition, _size);
+    _downBead = null;
     _dragRod = null;
+    if (bead == null) return;
     final before = widget.controller.total;
-    final row = widget.controller.tapAt(details.localPosition, _size);
-    if (row == null) return;
+    final row = widget.controller.toggleBead(bead);
     if (widget.controller.total != before) {
       _playForRow(row);
       Feel.snap();
@@ -74,38 +82,65 @@ class _KecrekanStageState extends State<KecrekanStage> {
     }
   }
 
-  /// Grab the bead on the initial pointer-down position. Using the down
-  /// position (rather than the pan-start position) matters: the pan is only
-  /// accepted after the finger has already travelled a little, which is often
-  /// enough to slide off a bead that is only a few logical pixels wide.
+  /// Grab the bead under the initial pointer-down position.
+  ///
+  /// Picking uses projected bead centres with a forgiving radius, so the child
+  /// does not have to hit the mesh. The row is locked here and every later
+  /// update stays on it.
   void _panDown(DragDownDetails details) {
     if (!widget.interactive) return;
     final bead = widget.controller.beadAt(details.localPosition, _size);
-    if (bead == null) return;
+    _downBead = bead;
+    if (bead == null) {
+      _dragRod = null;
+      return;
+    }
     _dragRod = bead.rod;
-    _dragStartCount = widget.controller.math.countFor(bead.rod);
-    _dragStartX = widget.controller.planeX(details.localPosition, _size) ?? 0;
+    _dragZ = bead.z;
+  }
+
+  /// Anchor the drag where the gesture was actually recognised, so the touch
+  /// slop the finger spent before the pan won does not change the count.
+  void _panStart(DragStartDetails details) {
+    final rod = _dragRod;
+    if (rod == null) return;
+    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
+    if (x == null) {
+      _dragRod = null;
+      return;
+    }
+    _dragStartCount = widget.controller.math.countFor(rod);
+    _dragStartX = x;
   }
 
   void _panUpdate(DragUpdateDetails details) {
     final rod = _dragRod;
     if (rod == null || !widget.interactive) return;
-    final x = widget.controller.planeX(details.localPosition, _size);
+    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
     if (x == null) return;
-    final delta = -((x - _dragStartX) / KecrekanMath.spacing).round();
+    // Anchored to the start of the drag, so reversing retraces the same
+    // counts and no frames are lost.
+    final target = KecrekanMath.dragCount(
+      startCount: _dragStartCount,
+      dx: x - _dragStartX,
+    );
     final before = widget.controller.math.countFor(rod);
-    widget.controller.setRowCount(rod, _dragStartCount + delta);
-    final after = widget.controller.math.countFor(rod);
-    if (after != before) {
-      _playForRow(after);
-      Feel.snap();
-      _notifyTouched();
-    }
+    if (target == before) return;
+    widget.controller.setRowCount(rod, target);
+    _playForRow(widget.controller.math.countFor(rod));
+    Feel.snap();
+    _notifyTouched();
   }
 
-  void _panEnd(DragEndDetails details) => _dragRod = null;
+  void _panEnd(DragEndDetails details) {
+    _dragRod = null;
+    _downBead = null;
+  }
 
-  void _panCancel() => _dragRod = null;
+  void _panCancel() {
+    _dragRod = null;
+    _downBead = null;
+  }
 
   void _playForRow(int count) {
     if (count > 0 && count % 5 == 0) {
@@ -175,6 +210,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
                         behavior: HitTestBehavior.opaque,
                         onTapUp: _tap,
                         onPanDown: _panDown,
+                        onPanStart: _panStart,
                         onPanUpdate: _panUpdate,
                         onPanEnd: _panEnd,
                         onPanCancel: _panCancel,
