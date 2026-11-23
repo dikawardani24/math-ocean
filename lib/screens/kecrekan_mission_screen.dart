@@ -40,7 +40,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
 
   int _attempts = 0;
   bool _usedHint = false;
-  bool _promptExpanded = true;
   bool _solved = false;
   bool _celebrate = false;
   String _encouragement = '';
@@ -195,7 +194,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
       _celebrate = false;
       _attempts = 0;
       _usedHint = false;
-      _promptExpanded = true;
       _encouragement = '';
       if (_isPractice) _target = _randomTarget();
       _controller.resetTo(_mission?.startValue ?? 0);
@@ -264,76 +262,71 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 260),
-                      curve: Curves.easeInOutCubic,
-                      alignment: Alignment.topCenter,
-                      child: _promptExpanded
-                          ? Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _PromptCard(
-                                  emoji: mission?.emoji ?? '💧',
-                                  story: story,
-                                  target: _target,
-                                  equation: mission?.question,
-                                  onSpeak: _speak,
-                                  onCollapse: () => setState(
-                                    () => _promptExpanded = false,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                              ],
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: AnimatedBuilder(
-                              animation: _shake,
-                              builder: (context, child) {
-                                final t = _shake.value;
-                                final dx =
-                                    math.sin(t * math.pi * 7) * (1 - t) * 9;
-                                return Transform.translate(
-                                  offset: Offset(dx, 0),
-                                  child: child,
-                                );
-                              },
-                              child: KecrekanStage(
-                                controller: _controller,
-                                onInteraction: () {
-                                  if (_promptExpanded ||
-                                      _encouragement.isNotEmpty) {
-                                    setState(() {
-                                      _promptExpanded = false;
-                                      _encouragement = '';
-                                    });
-                                  }
+                    const SizedBox(height: 4),
+                    _MissionObjective(
+                      emoji: mission?.emoji ?? '💧',
+                      title: mission?.title ?? 'Free play',
+                      target: _target,
+                      onHelp: () {
+                        showDialog<void>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            backgroundColor: OceanColors.shell,
+                            title: Text(
+                              mission?.title ?? 'How to play',
+                              style: const TextStyle(
+                                color: OceanColors.ink,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            content: Text(
+                              story,
+                              style: const TextStyle(
+                                color: OceanColors.ink,
+                                height: 1.35,
+                              ),
+                            ),
+                            actions: [
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop();
+                                  _speak();
                                 },
+                                icon: const Icon(Icons.volume_up_rounded),
+                                label: const Text('Listen'),
                               ),
-                            ),
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                child: const Text('Got it'),
+                              ),
+                            ],
                           ),
-                          if (!_promptExpanded)
-                            Positioned(
-                              top: 10,
-                              left: 76,
-                              right: 76,
-                              child: Center(
-                                child: _MissionPill(
-                                  emoji: mission?.emoji ?? '💧',
-                                  title: mission?.title ?? 'Free play',
-                                  target: _target,
-                                  onTap: () => setState(
-                                    () => _promptExpanded = true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: AnimatedBuilder(
+                        animation: _shake,
+                        builder: (context, child) {
+                          final t = _shake.value;
+                          final dx = math.sin(t * math.pi * 7) * (1 - t) * 9;
+                          return Transform.translate(
+                            offset: Offset(dx, 0),
+                            child: child,
+                          );
+                        },
+                        child: KecrekanStage(
+                          controller: _controller,
+                          showTotal: false,
+                          showResetButton: false,
+                          showHintOverlay: false,
+                          onInteraction: () {
+                            if (_encouragement.isNotEmpty) {
+                              setState(() => _encouragement = '');
+                            }
+                          },
+                        ),
                       ),
                     ),
                     if (_encouragement.isNotEmpty)
@@ -341,7 +334,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         padding: const EdgeInsets.only(top: 8),
                         child: _TipLine(text: _encouragement),
                       ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     AnimatedBuilder(
                       animation: _controller,
                       builder: (context, _) {
@@ -376,7 +369,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         );
                       },
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -415,6 +408,86 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
           if (_celebrate) const CelebrationBurst(),
         ],
       ),
+    );
+  }
+}
+
+
+class _MissionObjective extends StatelessWidget {
+  const _MissionObjective({
+    required this.emoji,
+    required this.title,
+    required this.target,
+    required this.onHelp,
+  });
+
+  final String emoji;
+  final String title;
+  final int target;
+  final VoidCallback onHelp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+            decoration: BoxDecoration(
+              color: OceanColors.shell.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+              boxShadow: oceanShadow(blur: 9, y: 3),
+            ),
+            child: Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: OceanColors.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Baloo2',
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: OceanColors.teal,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Make $target',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Baloo2',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 7),
+        Material(
+          color: OceanColors.shell.withValues(alpha: 0.92),
+          shape: const CircleBorder(),
+          child: IconButton(
+            tooltip: 'Mission help',
+            visualDensity: VisualDensity.compact,
+            onPressed: onHelp,
+            icon: const Icon(Icons.help_outline_rounded, color: OceanColors.teal),
+          ),
+        ),
+      ],
     );
   }
 }
