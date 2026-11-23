@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_scene/scene.dart';
 import 'package:vector_math/vector_math.dart' as vm;
 
-/// Reusable animated 3D baby green sea turtle used throughout Coral Cove.
-class Turtle3DCompanion extends StatelessWidget {
+/// Reusable 3D baby green sea turtle. The GLB supplies the flipper/tail swim
+/// cycle; this widget adds a gentle swimming path through its available space.
+class Turtle3DCompanion extends StatefulWidget {
   const Turtle3DCompanion({
     super.key,
     this.size = 180,
@@ -16,34 +19,82 @@ class Turtle3DCompanion extends StatelessWidget {
   final bool loop;
 
   @override
+  State<Turtle3DCompanion> createState() => _Turtle3DCompanionState();
+}
+
+class _Turtle3DCompanionState extends State<Turtle3DCompanion>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _swim;
+
+  @override
+  void initState() {
+    super.initState();
+    _swim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _swim.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size,
-      height: size * .88,
-      child: SceneView.declarative(
-        key: ValueKey(animation),
-        camera: PerspectiveCamera(
-          // glTF uses Y-up and -Z-forward. The Blender source is Z-up,
-          // so using a negative Y camera position looked underneath Tala.
-          position: vm.Vector3(0, 1.65, -5.1),
-          target: vm.Vector3(0, .18, 0),
-          fovRadiansY: 39 * 3.141592653589793 / 180,
-          fovNear: .05,
-          fovFar: 30,
-        ),
-        environmentIntensity: 1.15,
-        children: [
-          SceneModel(
-            'assets/3d/characters/tala_sea_turtle.glb',
-            animations: [
-              SceneAnimationSpec(
-                animation,
-                loop: loop,
+      width: widget.size,
+      height: widget.size * .94,
+      child: AnimatedBuilder(
+        animation: _swim,
+        child: _scene(),
+        builder: (context, child) {
+          final phase = _swim.value * math.pi * 2;
+          // A slow oval path, not a nervous shake: Tala swims left/right,
+          // rises and dips, and gently banks into each turn.
+          final horizontal = math.sin(phase) * widget.size * .17;
+          final vertical = math.sin(phase * 2) * widget.size * .035;
+          final bank = math.sin(phase) * .045;
+          return Transform.translate(
+            offset: Offset(horizontal, vertical),
+            child: Transform.rotate(
+              angle: bank,
+              child: Transform.scale(
+                scale: 1.10,
+                child: child,
               ),
-            ],
-          ),
-        ],
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  Widget _scene() {
+    return SceneView.declarative(
+      key: ValueKey(widget.animation),
+      camera: PerspectiveCamera(
+        // glTF is Y-up / -Z-forward. Keep the camera in front and zoom in
+        // enough that the whole character reads clearly on a phone.
+        position: vm.Vector3(0, 1.05, -3.85),
+        target: vm.Vector3(0, .20, 0),
+        fovRadiansY: 31 * math.pi / 180,
+        fovNear: .05,
+        fovFar: 30,
+      ),
+      environmentIntensity: 1.15,
+      children: [
+        SceneModel(
+          'assets/3d/characters/tala_sea_turtle.glb',
+          animations: [
+            SceneAnimationSpec(
+              widget.animation,
+              loop: widget.loop,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
