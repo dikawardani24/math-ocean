@@ -297,6 +297,37 @@ for x in (-.065, .065):
         10,
     ), head)
 
+# Bake the static facial features into the head mesh before export.
+# This avoids relying on a long chain of separately parented face objects in
+# the glTF hierarchy: eyes, pupils, highlights, muzzle, smile, nostrils and
+# head scutes become one guaranteed-visible animated head mesh. Keep the
+# lower jaw separate so Eat_Chew can still animate it.
+face_curves = [
+    obj for obj in scene.objects
+    if obj.parent == head and obj.type == "CURVE"
+]
+if face_curves:
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in face_curves:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = face_curves[0]
+    bpy.ops.object.convert(target="MESH")
+
+face_meshes = [
+    obj for obj in scene.objects
+    if obj.parent == head and obj.type == "MESH"
+]
+if not face_meshes:
+    raise RuntimeError("Tala face assembly failed: no facial meshes were created")
+bpy.ops.object.select_all(action="DESELECT")
+for obj in [head, *face_meshes]:
+    obj.select_set(True)
+bpy.context.view_layer.objects.active = head
+bpy.ops.object.join()
+head.name = "Tala_Head_With_Face"
+head.data.name = "Tala_Head_With_Face_Mesh"
+print("Tala face baked into head mesh:", len(head.data.vertices), "vertices")
+
 # Small lower jaw remains a separate animated piece for the feeding clip.
 jaw_surface_y = head_surface_point(0.0, -.135, .022)[1]
 jaw = parent_preserve_world(uv(
