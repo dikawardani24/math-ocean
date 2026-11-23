@@ -102,6 +102,15 @@ def head_surface_point(x, z, depth=.012):
     return (x, y, z)
 
 def surface_patch(name, points, mat, depth=.012, parent=None):
+    # glTF materials are front-face culled: normalize polygon winding so the
+    # visible surface normal faces the camera (toward -Y).
+    signed_area = sum(
+        points[i][0] * points[(i + 1) % len(points)][1]
+        - points[(i + 1) % len(points)][0] * points[i][1]
+        for i in range(len(points))
+    )
+    if signed_area < 0:
+        points = list(reversed(points))
     cx = sum(p[0] for p in points) / len(points)
     cz = sum(p[1] for p in points) / len(points)
     vertices = [head_surface_point(cx, cz, depth + .002)]
@@ -206,7 +215,6 @@ for side, x in (("L", -.30), ("R", .30)):
     parent_preserve_world(uv("Tala_EyeWhite_" + side, (x, -1.59, .39), (.19, .105, .22), eye_white), head)
     parent_preserve_world(uv("Tala_Pupil_" + side, (x * 1.02, -1.681, .37), (.092, .052, .125), pupil), head)
     parent_preserve_world(uv("Tala_EyeSparkle_" + side, (x * 1.02 - .035, -1.727, .425), (.035, .022, .045), shine, 20, 12), head)
-    parent_preserve_world(uv("Tala_Cheek_" + side, (x * 1.34, -1.55, .075), (.075, .028, .045), cheek, 20, 12), head)
 
 # Green turtles do not have a duck-like protruding beak or a human smile.
 # Their short, rounded upper and lower jaws are covered by keratinous plates.
