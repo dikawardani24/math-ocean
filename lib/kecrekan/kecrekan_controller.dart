@@ -146,10 +146,10 @@ class KecrekanController extends ChangeNotifier {
   void reset() => resetTo(initialCount);
 
   /// How far, in logical pixels, a finger may be from a bead's centre and
-  /// still grab it. The beads themselves are never enlarged.
+  /// still grab it. The beads themselves are never enlarged. The wider radius helps small fingers land on a bead without requiring precision.
   static double pickRadiusFor(Size size) {
     final shortest = size.isEmpty ? 360.0 : size.shortestSide;
-    return (shortest * 0.05).clamp(22.0, 32.0);
+    return (shortest * 0.065).clamp(26.0, 38.0);
   }
 
   /// The bead nearest [local] in screen space, within [radius].
