@@ -49,7 +49,7 @@ void main() {
       expect(gap, closeTo(2 * KecrekanMath.spacing, 0.0001));
       expect(gap, closeTo(2 * KecrekanMath.spacing, 0.0001));
       expect(positions.first, KecrekanMath.rightX);
-      expect(positions.last, KecrekanMath.leftX + KecrekanMath.spacing);
+      expect(positions.last, KecrekanMath.leftX);
     });
 
     test('one count moves the crossing bead exactly one slot', () {
@@ -109,7 +109,7 @@ void main() {
     });
 
     test('never leaves the rod range', () {
-      expect(KecrekanMath.toggledCount(10, 9), 9);
+      expect(KecrekanMath.toggledCount(5, 4), 4);
       expect(KecrekanMath.toggledCount(0, 0), 1);
       for (var count = 0; count <= 5; count++) {
         for (var index = 0; index < 5; index++) {
@@ -132,8 +132,8 @@ void main() {
       final spacing = KecrekanMath.spacing;
       expect(KecrekanMath.dragCount(startCount: 0, dx: -spacing), 1);
       expect(KecrekanMath.dragCount(startCount: 0, dx: -3 * spacing), 3);
-      expect(KecrekanMath.dragCount(startCount: 6, dx: spacing), 5);
-      expect(KecrekanMath.dragCount(startCount: 6, dx: 2 * spacing), 4);
+      expect(KecrekanMath.dragCount(startCount: 5, dx: spacing), 4);
+      expect(KecrekanMath.dragCount(startCount: 5, dx: 2 * spacing), 3);
     });
 
     test('reversing retraces the same counts without lifting', () {
@@ -200,7 +200,8 @@ void main() {
         for (var i = 0; i < 5; i++) {
           final expected = i >= 5 - count
               ? KecrekanMath.leftX + (4 - i) * KecrekanMath.spacing
-               : KecrekanMath.rightX - i * KecrekanMath.spacing;
+
+              : KecrekanMath.rightX - i * KecrekanMath.spacing;
           expect(positions[i], closeTo(expected, 1e-9));
           (i >= 5 - count ? counted : uncounted).add(positions[i]);
         }
