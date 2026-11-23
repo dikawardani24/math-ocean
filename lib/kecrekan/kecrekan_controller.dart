@@ -389,12 +389,16 @@ class KecrekanController extends ChangeNotifier {
 
     const rowSpacing = 0.52;
     for (final bead in _allBeads) {
-      final rowY = (bead.rod - (activeRowCount - 1) / 2) * rowSpacing;
+      final rowY = bead.rod < activeRowCount
+          ? (bead.rod - (activeRowCount - 1) / 2) * rowSpacing
+          : 0.0;
       bead.y = rowY;
       bead.node.position = vm.Vector3(bead.x, rowY, bead.z);
     }
     for (final entry in _rowNodes.entries) {
-      final rowY = (entry.key - (activeRowCount - 1) / 2) * rowSpacing;
+      final rowY = entry.key < activeRowCount
+          ? (entry.key - (activeRowCount - 1) / 2) * rowSpacing
+          : 0.0;
       for (final node in entry.value) {
         if (node.name.startsWith('Bead_R')) continue;
         final p = node.position;
