@@ -15,9 +15,8 @@ class CoralCove3DBackdrop extends StatefulWidget {
 
 class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
   final Scene _scene = Scene();
-  Camera? _camera;
+  PerspectiveCamera? _camera;
   bool _loaded = false;
-  bool _failed = false;
 
   @override
   void initState() {
@@ -50,7 +49,7 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
       if (mounted) setState(() => _loaded = _camera != null);
     } catch (error, stack) {
       debugPrint('Coral Cove environment failed to load: $error\n$stack');
-      if (mounted) setState(() => _failed = true);
+      if (mounted) setState(() {});
     }
   }
 
