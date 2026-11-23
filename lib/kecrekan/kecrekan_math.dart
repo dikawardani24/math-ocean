@@ -49,7 +49,7 @@ class KecrekanMath {
   /// counted.
   ///
   /// Beads keep their order on the rod: index 0 starts at the screen-right
-  /// end, index 9 at the screen-left end. Counted beads pack against the left
+  /// end, index 4 at the screen-left end. Counted beads pack against the left
   /// side of the frame; the rest pack against the right. Exactly one empty
   /// slot separates the groups, and the five-bead marker sits in that slot at
   /// a five-bead row.
