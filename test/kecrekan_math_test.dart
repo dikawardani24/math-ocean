@@ -51,6 +51,22 @@ void main() {
       expect(positions.last, KecrekanMath.leftX);
     });
 
+    test('neighbouring beads touch with no visible gap', () {
+      expect(KecrekanMath.spacing, KecrekanMath.beadDiameter);
+      for (var count = 0; count <= 5; count++) {
+        final positions = [
+          for (var i = 0; i < 5; i++) KecrekanMath.beadX(i, count),
+        ];
+        for (var i = 1; i < 5; i++) {
+          expect(
+            (positions[i - 1] - positions[i]).abs(),
+            closeTo(KecrekanMath.beadDiameter, 1e-9),
+            reason: 'adjacent beads must remain in physical contact',
+          );
+        }
+      }
+    });
+
     test('one count moves the crossing bead exactly one slot', () {
       for (var count = 0; count < 5; count++) {
         final crossing = 4 - count;
