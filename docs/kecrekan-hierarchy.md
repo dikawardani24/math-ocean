@@ -39,7 +39,7 @@ and the physical counting action remains the dominant interaction.
 
 - 25 nodes total: rods 0–4, bead indices 00–04.
 - Every bead remains an independent node with its origin at the bead centre.
-- Bead meshes are shared by colour/shade for rendering efficiency.
+- Bead meshes are shared by row colour for rendering efficiency.
 - Custom properties preserve `role`, `rod_index`, `bead_index`,
   `group`, `color` and `active_value`.
 
