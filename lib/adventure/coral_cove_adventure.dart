@@ -115,22 +115,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   }
 
   void _collectSnack(int index) {
-    // Keep the food and the physical counting frame in lockstep: a child
-    // must represent the previous item with one bead before gathering another.
+    // Let children explore and collect every visible item freely. Counting is
+    // a separate, connected action: the Kecrekan total must match the number
+    // of seagrass they discovered before the reef celebrates.
     if (_collectedSnacks.contains(index) || _completed) return;
-
-    // Do not silently ignore a child's tap. The next object becomes available
-    // only after the previous object has one matching bead on the frame.
-    if (_kecrekan.total < _collectedSnacks.length) {
-      _speak('Finish counting the seagrass you already found. Move one bead!');
-      Feel.tap();
-      return;
-    }
-    if (_kecrekan.total > _collectedSnacks.length) {
-      _speak('That is one bead too many. Slide one bead back, then find more seagrass.');
-      Feel.tap();
-      return;
-    }
 
     setState(() {
       _collectedSnacks.add(index);
@@ -138,8 +126,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     AudioService.instance.sfx('bead_slide');
     Feel.snap();
 
+    final count = _collectedSnacks.length;
     _speak(
-      'You found seagrass ${_collectedSnacks.length}. Move one bead for this one!',
+      count == _targetSnacks
+          ? 'You found all the seagrass! Count them on the coral abacus.'
+          : 'You found $count seagrass! Find the rest, then count them on the coral abacus.',
     );
   }
 
