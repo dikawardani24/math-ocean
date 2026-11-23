@@ -135,7 +135,7 @@ class StationScreen extends StatelessWidget {
                               if (isJarima) {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const JarimatikaScreen(practice: true),
+                                    builder: (_) => const JarimatikaScreen(learnMode: true),
                                   ),
                                 );
                               } else {
