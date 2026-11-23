@@ -7,7 +7,6 @@ import '../core/feedback.dart';
 import '../theme.dart';
 import '../widgets/ui_kit.dart';
 import 'kecrekan_controller.dart';
-import 'kecrekan_math.dart';
 
 /// The playable 3D counting frame.
 ///
@@ -39,9 +38,6 @@ class KecrekanStage extends StatefulWidget {
 class _KecrekanStageState extends State<KecrekanStage> {
   Size _size = Size.zero;
   KecrekanBead? _downBead;
-  int? _dragRod;
-  double? _dragStartWorldX;
-  int _dragStartCount = 0;
   bool _touched = false;
   bool _started = false;
 
@@ -71,7 +67,6 @@ class _KecrekanStageState extends State<KecrekanStage> {
     final bead =
         _downBead ?? widget.controller.beadAt(details.localPosition, _size);
     _downBead = null;
-    _dragRod = null;
     if (bead == null) return;
     final before = widget.controller.total;
     final row = widget.controller.toggleBead(bead);
@@ -88,42 +83,49 @@ class _KecrekanStageState extends State<KecrekanStage> {
     if (!widget.interactive) return;
     final bead = widget.controller.beadAt(details.localPosition, _size);
     _downBead = bead;
-    _dragRod = bead?.rod;
-    _dragStartWorldX = null;
+    _downBead = bead;
   }
 
-  /// Anchor the drag in world-space so finger travel moves beads proportionally.
-  /// Long drags can move multiple beads; reversing retraces the same positions.
+  /// Keep the identity of the initially grabbed bead for the entire gesture.
   void _panStart(DragStartDetails details) {
-    final rod = _dragRod;
-    if (rod == null) return;
-    _dragStartWorldX = widget.controller.planeX(details.localPosition, _size);
-    _dragStartCount = widget.controller.math.countFor(rod);
+    final bead = _downBead;
+    if (bead == null) return;
+    final worldX = widget.controller.planeX(
+      details.localPosition,
+      _size,
+      z: bead.z,
+    );
+    if (worldX == null) return;
+    widget.controller.beginBeadDrag(bead, worldX);
   }
 
   void _panUpdate(DragUpdateDetails details) {
-    final rod = _dragRod;
-    final startX = _dragStartWorldX;
-    if (rod == null || startX == null || !widget.interactive) return;
-    final worldX = widget.controller.planeX(details.localPosition, _size);
+    if (!widget.interactive) return;
+    final bead = _downBead;
+    if (bead == null) return;
+    final worldX = widget.controller.planeX(
+      details.localPosition,
+      _size,
+      z: bead.z,
+    );
     if (worldX == null) return;
-    final dx = worldX - startX;
-    final target = KecrekanMath.dragCount(startCount: _dragStartCount, dx: dx);
-    final before = widget.controller.math.countFor(rod);
-    if (target == before) return;
-    widget.controller.setRowCount(rod, target);
-    _playForRow(target);
-    Feel.snap();
-    _notifyTouched();
+    final before = widget.controller.total;
+    final rowCount = widget.controller.dragBeadTo(worldX);
+    if (rowCount == null) return;
+    if (widget.controller.total != before) {
+      _playForRow(rowCount);
+      Feel.snap();
+      _notifyTouched();
+    }
   }
 
   void _panEnd(DragEndDetails details) {
-    _dragRod = null;
+    widget.controller.endBeadDrag();
     _downBead = null;
   }
 
   void _panCancel() {
-    _dragRod = null;
+    widget.controller.endBeadDrag();
     _downBead = null;
   }
 
