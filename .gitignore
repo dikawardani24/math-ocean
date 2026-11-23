@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Locally generated Coral Cove Blender outputs
+/artifacts/blender/coral_cove/
+/assets/3d/coral_cove/*.glb
