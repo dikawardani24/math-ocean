@@ -460,9 +460,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                           opacity: .2,
                           child: _SeagrassToken(size: 54),
                         ),
-                        child: _SeagrassToken(
-                          size: 54,
-                          lifted: _feedingGrassIndex == i,
+                        child: Opacity(
+                          opacity: _feedingGrassIndex == i ? .22 : 1,
+                          child: _SeagrassToken(
+                            size: 54,
+                            lifted: _feedingGrassIndex == i,
+                          ),
                         ),
                       )
                     else
@@ -470,7 +473,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                 ],
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 _isEating
                     ? 'Wait for the turtle to finish chewing!'
                     : 'Drag one piece at a time to the turtle',
@@ -560,9 +563,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             ),
           ),
           OceanPill(
-            label: _step == _CoralStep.collecting || _step == _CoralStep.feeding
+            label: _step == _CoralStep.collecting
                 ? _collected.length.toString() + '/' + _target.toString()
-                : _target.toString() + ' 🌿',
+                : _step == _CoralStep.feeding
+                    ? _fedGrass.length.toString() + '/' + _target.toString()
+                    : _target.toString() + ' 🌿',
             emoji: '🐢',
             compact: true,
             color: OceanColors.mint,
