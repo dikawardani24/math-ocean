@@ -105,8 +105,36 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     }
   }
 
-  void _feedTurtle() {
-    if (_step != _CoralStep.feeding || _recorded) return;
+  final Set<int> _fedGrass = {};
+  bool _finishingFeed = false;
+
+  void _feedOne(int grassIndex) {
+    if (_step != _CoralStep.feeding ||
+        _finishingFeed ||
+        _fedGrass.contains(grassIndex)) {
+      return;
+    }
+
+    setState(() => _fedGrass.add(grassIndex));
+    Feel.success();
+    AudioService.instance.sfx('bead_slide');
+
+    if (_fedGrass.length == _target) {
+      setState(() => _finishingFeed = true);
+      _say('Munch, munch! My tummy is full. Thank you, friend!');
+      Future<void>.delayed(const Duration(milliseconds: 1100), () {
+        if (mounted) _completeFeeding();
+      });
+    } else {
+      final remaining = _target - _fedGrass.length;
+      _say(remaining == 1
+          ? 'Crunch! That was tasty. One more piece, please!'
+          : 'Crunch, crunch! That was tasty. $remaining more pieces!');
+    }
+  }
+
+  void _completeFeeding() {
+    if (_recorded || !mounted) return;
     _recorded = true;
     setState(() => _step = _CoralStep.discovery);
     final progress = ProgressScope.read(context);
@@ -127,7 +155,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     progress.addPearls(1);
     Feel.success();
     AudioService.instance.sfx('mission_complete');
-    _say('Yum! Thank you! Sea turtles help keep seagrass meadows healthy.');
+    _say('Sea turtles graze on seagrass and help keep underwater meadows healthy!');
   }
 
   @override
@@ -285,31 +313,150 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     },
   );
 
-  Widget _feeding() => Center(
+  Widget _feeding() => Padding(
     key: const ValueKey('feeding'),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TurtleCompanion(size: 180),
-          const SizedBox(height: 12),
-          SpeechBubble(message: _dialogue),
-          const SizedBox(height: 22),
-          GestureDetector(
-            onTap: _feedTurtle,
-            child: AnimatedBuilder(
-              animation: _pulse,
-              builder: (context, child) => Transform.scale(scale: 1 + _pulse.value * .035, child: child),
-              child: _FoodBasket(count: _collected.length, target: _target, large: true),
-            ),
+    padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+    child: Column(
+      children: [
+        SpeechBubble(message: _dialogue),
+        const SizedBox(height: 12),
+        Expanded(
+          child: DragTarget<int>(
+            onWillAccept: (index) =>
+                index != null &&
+                !_finishingFeed &&
+                !_fedGrass.contains(index),
+            onAccept: _feedOne,
+            builder: (context, candidateData, rejectedData) {
+              final hovering = candidateData.isNotEmpty;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: hovering
+                      ? OceanColors.mint.withValues(alpha: .2)
+                      : Colors.white.withValues(alpha: .06),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: hovering ? OceanColors.sunny : OceanColors.mint.withValues(alpha: .45),
+                    width: hovering ? 4 : 2,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedScale(
+                      scale: hovering ? 1.12 : 1,
+                      duration: const Duration(milliseconds: 180),
+                      child: TurtleCompanion(
+                        size: 190,
+                        cheering: _fedGrass.isNotEmpty,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: hovering ? OceanColors.sunny : OceanColors.shell,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Text(
+                        _finishingFeed
+                            ? 'YUMMY! TUMMY FULL!'
+                            : hovering
+                                ? 'LET GO TO FEED ME!'
+                                : 'DROP THE SEAGRASS HERE',
+                        style: const TextStyle(
+                          color: OceanColors.ink,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${_fedGrass.length} / $_target pieces eaten',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
-          const SizedBox(height: 18),
-          BigButton(label: 'Feed the turtle!', icon: Icons.restaurant_rounded, onTap: _feedTurtle),
-          const SizedBox(height: 8),
-          const Text('Tap the basket to share the seagrass', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: OceanColors.shell,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'YOUR SEAGRASS BASKET',
+                    style: TextStyle(
+                      color: OceanColors.ink,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    '${_target - _fedGrass.length} LEFT',
+                    style: const TextStyle(
+                      color: OceanColors.inkSoft,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  for (var i = 0; i < _target; i++)
+                    if (!_fedGrass.contains(i))
+                      Draggable<int>(
+                        data: i,
+                        maxSimultaneousDrags: _finishingFeed ? 0 : 1,
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: _SeagrassToken(size: 62, lifted: true),
+                        ),
+                        childWhenDragging: Opacity(
+                          opacity: .2,
+                          child: _SeagrassToken(size: 54),
+                        ),
+                        child: _SeagrassToken(size: 54),
+                      )
+                    else
+                      _SeagrassToken(size: 54, eaten: true),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Drag one piece at a time to the turtle',
+                style: TextStyle(
+                  color: OceanColors.inkSoft,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 
@@ -397,6 +544,40 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       ),
     );
   }
+}
+
+class _SeagrassToken extends StatelessWidget {
+  const _SeagrassToken({
+    required this.size,
+    this.lifted = false,
+    this.eaten = false,
+  });
+
+  final double size;
+  final bool lifted;
+  final bool eaten;
+
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 180),
+    width: size,
+    height: size,
+    padding: const EdgeInsets.all(7),
+    decoration: BoxDecoration(
+      color: eaten
+          ? OceanColors.mint.withValues(alpha: .35)
+          : const Color(0xFFE9F6D7),
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: eaten ? OceanColors.mint : const Color(0xFF75C85F),
+        width: lifted ? 3 : 2,
+      ),
+      boxShadow: lifted ? oceanShadow(blur: 16, y: 6) : null,
+    ),
+    child: eaten
+        ? const Icon(Icons.check_rounded, color: Color(0xFF187B5B), size: 28)
+        : const CustomPaint(painter: _SeagrassPainter()),
+  );
 }
 
 class _FoodBasket extends StatelessWidget {
