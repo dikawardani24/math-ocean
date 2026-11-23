@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import math
 import os
-import random
 import sys
 
 import bpy
@@ -30,8 +29,7 @@ ASSET_DIR = os.path.join(ROOT, "assets", "3d", "kecrekan")
 POC_DIR = os.path.join(ASSET_DIR, "poc")
 
 # Layout contract shared with src/kecrekan/layout.js
-# The silhouette follows the reference toy: a chunky, friendly, butterfly-like
-# frame with two loop "ears", a smiling face and ten rows of ten beads.
+# The instrument uses a quiet rectangular frame and ten rows of ten tactile beads.
 ROD_COUNT = 10
 BEADS_PER_ROD = 10
 BEAD_SPACING = 0.22
@@ -106,57 +104,6 @@ def make_material(
     return mat
 
 
-def make_seaglass_texture() -> bpy.types.Image:
-    """Generate a glossy sea-glass / pearl-swirl surface and save it next to the GLB."""
-    size = 512
-    img = bpy.data.images.new("KecrekanSeaGlass", width=size, height=size, alpha=False)
-    img.colorspace_settings.name = "sRGB"
-    pixels = [0.0] * (size * size * 4)
-    rng = random.Random(21)
-    for y in range(size):
-        for x in range(size):
-            u = x / size
-            v = y / size
-            swirl = (
-                math.sin((u * 5.0 + math.sin(v * 6.2) * 0.55) * math.pi * 2.0) * 0.5
-                + 0.5
-            )
-            pearl = math.sin((v * 17.0 + u * 3.0) * math.pi * 2.0) * 0.5 + 0.5
-            speck = 1.0 if rng.random() > 0.985 else 0.0
-            grain = 0.55 * swirl + 0.30 * pearl + 0.15 * speck
-            # Friendly sea-glass violet with mint and pearl highlights.
-            r = 0.18 + 0.30 * grain
-            g = 0.08 + 0.24 * grain
-            b = 0.46 + 0.38 * grain
-            i = (y * size + x) * 4
-            pixels[i] = min(1.0, r)
-            pixels[i + 1] = min(1.0, g)
-            pixels[i + 2] = min(1.0, b)
-            pixels[i + 3] = 1.0
-    img.pixels = pixels
-    path = os.path.join(ASSET_DIR, "kecrekan_seaglass.png")
-    img.filepath_raw = path
-    img.file_format = "PNG"
-    img.save()
-    return img
-
-
-def seaglass_material(img: bpy.types.Image) -> bpy.types.Material:
-    mat = make_material("Frame_SeaGlass", (0.30, 0.16, 0.60, 1.0), roughness=0.30, clearcoat=0.45)
-    nt = mat.node_tree
-    bsdf = nt.nodes.get("Principled BSDF")
-    tex = nt.nodes.new("ShaderNodeTexImage")
-    tex.image = img
-    tex.interpolation = "Linear"
-    tex.location = (-420, 220)
-    uv = nt.nodes.new("ShaderNodeUVMap")
-    uv.uv_map = "UVMap"
-    uv.location = (-640, 220)
-    nt.links.new(uv.outputs["UV"], tex.inputs["Vector"])
-    nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-    return mat
-
-
 def add_bevel(obj: bpy.types.Object, width: float = 0.04, segments: int = 3) -> None:
     mod = obj.modifiers.new("soft edges", "BEVEL")
     mod.width = width
@@ -184,16 +131,6 @@ def cube(
     obj.data.materials.append(mat)
     move_to_collection(obj, col)
     return obj
-
-
-def uv_cube(obj: bpy.types.Object) -> None:
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.cube_project(cube_size=1.0)
-    bpy.ops.object.mode_set(mode="OBJECT")
-    obj.select_set(False)
 
 
 # ---------------------------------------------------------------------------
@@ -262,19 +199,6 @@ def add_text(
     bpy.ops.object.convert(target="MESH")
     obj.select_set(False)
     return obj
-
-
-def make_star_mesh(name: str, points: int = 5, outer: float = 0.16, inner: float = 0.07) -> bpy.types.Mesh:
-    verts = []
-    for i in range(points * 2):
-        r = outer if i % 2 == 0 else inner
-        a = (i / (points * 2)) * math.pi * 2.0 - math.pi / 2.0
-        verts.append((math.cos(a) * r, math.sin(a) * r, 0.0))
-    faces = [tuple(range(points * 2))]
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    return mesh
 
 
 def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | None = None) -> bpy.types.Object:
@@ -427,19 +351,6 @@ def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) ->
             bead["active_value"] = 1
             bead.parent = root
             col.objects.link(bead)
-
-
-def star_mesh(name: str, points: int = 5, outer: float = 0.16, inner: float = 0.07) -> bpy.types.Mesh:
-    verts = []
-    for i in range(points * 2):
-        r = outer if i % 2 == 0 else inner
-        a = (i / (points * 2)) * math.pi * 2.0 - math.pi / 2.0
-        verts.append((math.cos(a) * r, math.sin(a) * r, 0.0))
-    faces = [tuple(range(points * 2))]
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    return mesh
 
 
 def create_decor(mats: dict[str, bpy.types.Material], root: bpy.types.Object) -> None:
