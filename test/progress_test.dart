@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:math_ocean/core/catalog.dart';
 import 'package:math_ocean/core/models.dart';
@@ -72,5 +74,37 @@ void main() {
     expect(restored.totalStars, 3);
     expect(restored.pearls, 2);
     expect(restored.firstTryFor(StationKind.counting), 1);
+  });
+
+  test('challenge and adventure stars count toward totalStars', () {
+    final progress = ProgressController.inMemory();
+    final challenge = randomChallengeFor(
+      StationKind.counting,
+      random: math.Random(1),
+    );
+    progress.recordSuccess(challenge, stars: 3, firstTry: true);
+    expect(progress.totalStars, 3);
+  });
+
+  test('discovering creatures and completing Coral Cove unlocks Shell Shore', () {
+    final progress = ProgressController.inMemory();
+    expect(progress.isLocationUnlocked('coral_cove'), isTrue);
+    expect(progress.isLocationUnlocked('shell_shore'), isFalse);
+    expect(progress.discoverCreature('green_turtle'), isTrue);
+    expect(progress.discoverCreature('green_turtle'), isFalse);
+    progress.completeAdventure('coral_cove');
+    expect(progress.hasCompletedAdventure('coral_cove'), isTrue);
+    expect(progress.isLocationUnlocked('shell_shore'), isTrue);
+    expect(progress.discoveryCount, 1);
+  });
+
+  test('discovery state survives a round trip', () {
+    final progress = ProgressController.inMemory();
+    progress.discoverCreature('clownfish');
+    progress.completeAdventure('coral_cove');
+    final restored = ProgressController.inMemory(progress.toJsonForTesting());
+    expect(restored.hasDiscovered('clownfish'), isTrue);
+    expect(restored.hasCompletedAdventure('coral_cove'), isTrue);
+    expect(restored.isLocationUnlocked('shell_shore'), isTrue);
   });
 }

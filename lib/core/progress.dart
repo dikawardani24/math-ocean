@@ -35,6 +35,9 @@ class ProgressController extends ChangeNotifier {
   final Map<String, int> _correct = {};
   final Map<String, int> _firstTry = {};
   final Set<String> _seenTips = {};
+  final Set<String> _discoveredCreatures = {};
+  final Set<String> _completedAdventures = {};
+  final Set<String> _unlockedLocations = {'coral_cove'};
 
   int _pearls = 0;
   int _jarimatikaCorrect = 0;
@@ -73,17 +76,32 @@ class ProgressController extends ChangeNotifier {
   String? get lastMissionId => _lastMissionId;
   Set<String> get treasures => Set.unmodifiable(_treasures);
   int get treasureCount => _treasures.length;
+  Set<String> get discoveredCreatures =>
+      Set.unmodifiable(_discoveredCreatures);
+  Set<String> get completedAdventures =>
+      Set.unmodifiable(_completedAdventures);
+  Set<String> get unlockedLocations => Set.unmodifiable(_unlockedLocations);
+  int get discoveryCount => _discoveredCreatures.length;
 
   int starsFor(String missionId) => _stars[missionId] ?? 0;
 
   int stationStars(StationKind kind) =>
       missionsFor(kind).fold(0, (sum, m) => sum + starsFor(m.id));
 
-  int get totalStars =>
-      kMissions.fold(0, (sum, mission) => sum + starsFor(mission.id));
+  /// Counts every earned star, including adventure and challenge ids.
+  int get totalStars => _stars.values.fold(0, (sum, s) => sum + s);
 
   int get completedMissions =>
       kMissions.where((m) => starsFor(m.id) > 0).length;
+
+  bool hasDiscovered(String creatureId) =>
+      _discoveredCreatures.contains(creatureId);
+
+  bool hasCompletedAdventure(String adventureId) =>
+      _completedAdventures.contains(adventureId);
+
+  bool isLocationUnlocked(String locationId) =>
+      _unlockedLocations.contains(locationId);
 
   int correctFor(StationKind kind) => _correct[kind.id] ?? 0;
   int firstTryFor(StationKind kind) => _firstTry[kind.id] ?? 0;
@@ -110,6 +128,11 @@ class ProgressController extends ChangeNotifier {
       firstTryFor(StationKind.addition) >= 2 &&
       firstTryFor(StationKind.subtraction) >= 1 &&
       totalStars >= 8;
+
+  /// Shell Shore opens after the Coral Cove adventure is finished.
+  bool get shellShoreUnlocked =>
+      hasCompletedAdventure('coral_cove') ||
+      firstTryFor(StationKind.counting) >= 1;
 
   List<MasteryGoal> get masteryGoals => [
     MasteryGoal('Count cleanly', firstTryFor(StationKind.counting), 3, '💧'),
@@ -167,6 +190,34 @@ class ProgressController extends ChangeNotifier {
     _persist();
     notifyListeners();
     return reward;
+  }
+
+  /// Discovers a creature for the journal. Returns true the first time.
+  bool discoverCreature(String creatureId) {
+    if (!_discoveredCreatures.add(creatureId)) return false;
+    _persist();
+    notifyListeners();
+    return true;
+  }
+
+  /// Marks an adventure complete and unlocks the next location when ready.
+  void completeAdventure(String adventureId, {List<String> unlockLocations = const []}) {
+    _completedAdventures.add(adventureId);
+    for (final location in unlockLocations) {
+      _unlockedLocations.add(location);
+    }
+    if (adventureId == 'coral_cove') {
+      _unlockedLocations.add('shell_shore');
+    }
+    _persist();
+    notifyListeners();
+  }
+
+  void unlockLocation(String locationId) {
+    if (_unlockedLocations.add(locationId)) {
+      _persist();
+      notifyListeners();
+    }
   }
 
   void recordPractice({
@@ -239,6 +290,11 @@ class ProgressController extends ChangeNotifier {
     _correct.clear();
     _firstTry.clear();
     _seenTips.clear();
+    _discoveredCreatures.clear();
+    _completedAdventures.clear();
+    _unlockedLocations
+      ..clear()
+      ..add('coral_cove');
     _pearls = 0;
     _jarimatikaCorrect = 0;
     _jarimatikaBestStreak = 0;
@@ -258,6 +314,9 @@ class ProgressController extends ChangeNotifier {
     'correct': _correct,
     'firstTry': _firstTry,
     'seenTips': _seenTips.toList(),
+    'discoveredCreatures': _discoveredCreatures.toList(),
+    'completedAdventures': _completedAdventures.toList(),
+    'unlockedLocations': _unlockedLocations.toList(),
     'jarimatikaCorrect': _jarimatikaCorrect,
     'jarimatikaBestStreak': _jarimatikaBestStreak,
     'jarimatikaPlays': _jarimatikaPlays,
@@ -293,6 +352,23 @@ class ProgressController extends ChangeNotifier {
     _seenTips
       ..clear()
       ..addAll((map['seenTips'] as List?)?.map((e) => '$e') ?? const []);
+    _discoveredCreatures
+      ..clear()
+      ..addAll(
+        (map['discoveredCreatures'] as List?)?.map((e) => '$e') ?? const [],
+      );
+    _completedAdventures
+      ..clear()
+      ..addAll(
+        (map['completedAdventures'] as List?)?.map((e) => '$e') ?? const [],
+      );
+    _unlockedLocations
+      ..clear()
+      ..addAll(
+        (map['unlockedLocations'] as List?)?.map((e) => '$e') ??
+            const ['coral_cove'],
+      );
+    if (_unlockedLocations.isEmpty) _unlockedLocations.add('coral_cove');
     _pearls = (map['pearls'] as num?)?.toInt() ?? 0;
     _jarimatikaCorrect = (map['jarimatikaCorrect'] as num?)?.toInt() ?? 0;
     _jarimatikaBestStreak = (map['jarimatikaBestStreak'] as num?)?.toInt() ?? 0;
