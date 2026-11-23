@@ -224,7 +224,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             ),
             child: GestureDetector(
               onTap: () => AudioService.instance.speak(_dialogue),
-              child: const Turtle3DCompanion(size: 196),
+              child: const Turtle3DCompanion(size: 244),
             ),
           ),
           const SizedBox(height: 14),
@@ -299,7 +299,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
           Positioned(
             bottom: 10,
             left: constraints.maxWidth * .34,
-            child: Turtle3DCompanion(size: 120),
+            child: Turtle3DCompanion(size: 158),
           ),
           for (var i = 0; i < _target; i++)
             if (!_collected.contains(i))
@@ -372,7 +372,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       scale: hovering ? 1.12 : 1,
                       duration: const Duration(milliseconds: 180),
                       child: Turtle3DCompanion(
-                        size: 190,
+                        size: 220,
                         animation: _isEating
                             ? 'Eat_Chew'
                             : _finishingFeed
@@ -505,7 +505,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Turtle3DCompanion(size: 184, animation: 'Happy_Reaction', loop: false),
+          const Turtle3DCompanion(size: 226, animation: 'Happy_Reaction', loop: false),
           const SizedBox(height: 10),
           SpeechBubble(message: _dialogue),
           const SizedBox(height: 14),
