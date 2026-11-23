@@ -72,8 +72,8 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
 
   void _speak() {
     if (!mounted) return;
-    final line =
-        _mission?.voice ?? 'Can you make $_target? Tap the beads to count.';
+    final line = _mission?.voice ??
+        'Can you make $_target? Explore the beads and find the number.';
     AudioService.instance.speak(line);
   }
 
@@ -90,9 +90,8 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     final progress = ProgressScope.read(context);
     setState(() {
       _usedHint = true;
-      _encouragement =
-          _mission?.hint ??
-          'Tap one bead at a time. Each bead you slide over adds one.';
+      _encouragement = _mission?.hint ??
+          'Move the beads and notice how the group changes.';
     });
     AudioService.instance.sfx('bubble');
     AudioService.instance.speak(_encouragement);
@@ -106,8 +105,12 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     setState(() {
       _attempts++;
       _encouragement = _attempts == 1
-          ? 'Almost! Count the beads you slid over, then try again.'
-          : 'Keep going. Tala believes in you!';
+          ? (_mission?.isAddition == true
+                ? 'Look at both groups. How many are together now?'
+                : _mission?.isSubtraction == true
+                ? 'Some have gone away. Count the ones that are still here.'
+                : 'Count the beads you have moved, then try again.')
+          : 'Keep exploring. Tala believes in you!';
     });
     AudioService.instance.speak(_encouragement);
   }
@@ -280,6 +283,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       emoji: mission?.emoji ?? '💧',
                       title: mission?.title ?? 'Free play',
                       target: _target,
+                      prompt: mission?.question ?? 'Make $_target',
                       onHelp: () {
                         showDialog<void>(
                           context: context,
@@ -317,7 +321,12 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         );
                       },
                     ),
-                    const SizedBox(height: 4),
+                    if (mission != null &&
+                        (mission.isAddition || mission.isSubtraction)) ...[
+                      const SizedBox(height: 5),
+                      _OperationStoryStrip(mission: mission),
+                      const SizedBox(height: 5),
+                    ],
                     Expanded(
                       child: AnimatedBuilder(
                         animation: _shake,
@@ -431,12 +440,14 @@ class _MissionObjective extends StatelessWidget {
     required this.emoji,
     required this.title,
     required this.target,
+    required this.prompt,
     required this.onHelp,
   });
 
   final String emoji;
   final String title;
   final int target;
+  final String prompt;
   final VoidCallback onHelp;
 
   @override
@@ -476,7 +487,7 @@ class _MissionObjective extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    'Make $target',
+                    prompt,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -498,6 +509,121 @@ class _MissionObjective extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onHelp,
             icon: const Icon(Icons.help_outline_rounded, color: OceanColors.teal),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Makes the two quantities visible as separate concrete groups. The
+/// Kecrekan starts with the first group already built; the second group is
+/// the new arrival or the group that disappears in the story.
+class _OperationStoryStrip extends StatelessWidget {
+  const _OperationStoryStrip({required this.mission});
+
+  final Mission mission;
+
+  @override
+  Widget build(BuildContext context) {
+    final firstCount = mission.isAddition ? (mission.a ?? 0) : (mission.start ?? 0);
+    final secondCount = mission.b ?? 0;
+    final firstLabel = mission.isAddition ? 'Already here' : 'At the start';
+    final secondLabel = mission.isAddition ? 'Joining' : 'Goes away';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: OceanColors.abyss.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StoryGroup(
+              count: firstCount,
+              emoji: mission.emoji,
+              label: firstLabel,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: Text(
+              mission.isAddition ? '+' : '−',
+              style: const TextStyle(
+                color: OceanColors.foam,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _StoryGroup(
+              count: secondCount,
+              emoji: mission.emoji,
+              label: secondLabel,
+              faded: mission.isSubtraction,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: Text(
+              '= ?',
+              style: TextStyle(
+                color: OceanColors.sunny,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoryGroup extends StatelessWidget {
+  const _StoryGroup({
+    required this.count,
+    required this.emoji,
+    required this.label,
+    this.faded = false,
+  });
+
+  final int count;
+  final String emoji;
+  final String label;
+  final bool faded;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: OceanColors.foam.withValues(alpha: 0.82),
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Baloo2',
+          ),
+        ),
+        const SizedBox(height: 3),
+        Wrap(
+          spacing: 1,
+          runSpacing: 1,
+          children: List.generate(
+            count,
+            (_) => Opacity(
+              opacity: faded ? 0.42 : 1,
+              child: Text(emoji, style: const TextStyle(fontSize: 12)),
+            ),
           ),
         ),
       ],
