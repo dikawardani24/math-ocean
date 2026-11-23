@@ -46,23 +46,25 @@ def material(name, color, roughness=0.42, metallic=0.0):
 # Green turtles have olive/grey-brown skin with pale margins around many
 # head scales. Keep the palette soft and child-friendly, but avoid mint-green
 # plastic skin.
-skin = material("Tala | soft ocean green skin", (0.20, 0.55, 0.34), .48)
-skin_light = material("Tala | warm light green face", (0.34, 0.70, 0.43), .44)
-skin_scale_edge = material("Tala | pale green scale borders", (0.54, 0.72, 0.43), .55)
-skin_scale_fill = material("Tala | soft green head scales", (0.27, 0.58, 0.36), .52)
-skin_scale_alt = material("Tala | alternate green head scales", (0.30, 0.62, 0.39), .52)
-keratin = material("Tala | soft beak upper jaw", (0.55, 0.65, 0.43), .5)
-keratin_lower = material("Tala | soft beak lower jaw", (0.46, 0.58, 0.39), .52)
-shell = material("Tala | deep jade shell", (0.035, 0.29, 0.25), .3)
-shell_light = material("Tala | shell scutes", (0.13, 0.52, 0.37), .34)
-shell_edge = material("Tala | shell rim", (0.025, 0.19, 0.19), .38)
+skin = material("Tala | cheerful seafoam skin", (0.27, 0.72, 0.57), .55)
+skin_light = material("Tala | soft mint face", (0.48, 0.83, 0.65), .52)
+skin_scale_edge = material("Tala | subtle mint scale borders", (0.61, 0.82, 0.60), .58)
+skin_scale_fill = material("Tala | soft mint head scales", (0.39, 0.72, 0.53), .58)
+skin_scale_alt = material("Tala | alternate mint head scales", (0.43, 0.76, 0.57), .58)
+keratin = material("Tala | warm cream upper beak", (0.82, 0.78, 0.56), .58)
+keratin_lower = material("Tala | warm cream lower beak", (0.72, 0.72, 0.51), .58)
+shell = material("Tala | bright lagoon shell", (0.035, 0.43, 0.43), .38)
+shell_light = material("Tala | sunny turquoise shell scutes", (0.18, 0.68, 0.57), .42)
+shell_edge = material("Tala | soft teal shell rim", (0.035, 0.31, 0.34), .45)
 belly = material("Tala | pale plastron", (0.76, 0.83, 0.58), .48)
 eye_white = material("Tala | eye whites", (1.0, .98, .86), .22)
 eye_iris = material("Tala | deep teal irises", (.075, .30, .29), .22)
 pupil = material("Tala | dark pupils", (.012, .045, .05), .18)
 shine = material("Tala | eye sparkle", (1, 1, 1), .12)
-cheek = material("Tala | warm coral tongue", (.88, .32, .34), .5)
-mouth_mat = material("Tala | soft dark mouth", (.055, .12, .085), .62)
+cheek = material("Tala | warm coral tongue", (.94, .43, .43), .5)
+blush = material("Tala | soft peach cheeks", (1.0, .58, .49), .62)
+smile_mat = material("Tala | gentle smile", (.20, .36, .27), .62)
+mouth_mat = material("Tala | warm shaded mouth", (.12, .22, .16), .68)
 nostril_mat = material("Tala | nostril shadow", (.10, .20, .12), .64)
 
 def smooth(obj):
@@ -215,7 +217,7 @@ for side, x in (("L", -.315), ("R", .315)):
     parent_preserve_world(uv(
         "Tala_EyeWhite_" + side,
         (x, eye_surface_y - .018, .39),
-        (.205, .122, .235),
+        (.225, .132, .255),
         eye_white,
         36,
         24,
@@ -223,7 +225,7 @@ for side, x in (("L", -.315), ("R", .315)):
     parent_preserve_world(uv(
         "Tala_Iris_" + side,
         (x * 1.025, eye_surface_y - .092, .375),
-        (.137, .047, .174),
+        (.157, .052, .190),
         eye_iris,
         36,
         24,
@@ -231,7 +233,7 @@ for side, x in (("L", -.315), ("R", .315)):
     parent_preserve_world(uv(
         "Tala_Pupil_" + side,
         (x * 1.025, eye_surface_y - .126, .375),
-        (.103, .066, .145),
+        (.118, .072, .158),
         pupil,
         32,
         20,
@@ -239,49 +241,69 @@ for side, x in (("L", -.315), ("R", .315)):
     parent_preserve_world(uv(
         "Tala_EyeSparkle_" + side,
         (x * 1.025 - .038, eye_surface_y - .184, .435),
-        (.040, .025, .052),
+        (.047, .028, .058),
         shine,
         20,
         12,
     ), head)
 
-# A distinct rounded upper beak sits above a clearly open mouth.
-# The dark cavity is pushed forward beyond the face surface so it cannot
-# disappear into the muzzle when rendered from the front.
-muzzle_surface_y = head_surface_point(0.0, .015, .025)[1]
+# A soft, compact muzzle and a small curved smile give Tala a
+# welcoming baby-turtle expression. The mouth cavity is deliberately shallow
+# and muted; it reads as a mouth without becoming a large black opening.
+muzzle_surface_y = head_surface_point(0.0, -.015, .025)[1]
 upper_beak = parent_preserve_world(uv(
-    "Tala_Upper_Beak",
-    (0.0, muzzle_surface_y - .045, -.005),
-    (.235, .145, .125),
+    "Tala_Soft_Muzzle",
+    (0.0, muzzle_surface_y - .025, -.045),
+    (.205, .105, .095),
     keratin,
     40,
     24,
 ), head)
 
-mouth_y = muzzle_surface_y - .165
+mouth_y = muzzle_surface_y - .105
 mouth = parent_preserve_world(uv(
     "Tala_Open_Mouth_Cavity",
-    (0.0, mouth_y, -.112),
-    (.158, .035, .064),
+    (0.0, mouth_y, -.145),
+    (.105, .022, .034),
     mouth_mat,
-    40,
-    24,
+    36,
+    20,
 ), head)
 tongue = parent_preserve_world(uv(
     "Tala_Tongue",
-    (0.0, mouth_y - .026, -.145),
-    (.075, .014, .022),
+    (0.0, mouth_y - .017, -.170),
+    (.045, .010, .012),
     cheek,
-    28,
-    16,
+    24,
+    14,
 ), head)
+surface_curve(
+    "Tala_Sweet_Smile",
+    [(-.155, -.105), (-.085, -.145), (0.0, -.158), (.085, -.145), (.155, -.105)],
+    smile_mat,
+    .012,
+    .045,
+    head,
+)
 
-# Two tiny nostrils sit high on the upper beak, separated from the mouth.
-for x in (-.065, .065):
+# Soft peach cheek patches make the expression feel warm rather than stern.
+for side, x in (("L", -.455), ("R", .455)):
+    cheek_y = head_surface_point(x, .075, .035)[1]
+    parent_preserve_world(uv(
+        "Tala_Blush_" + side,
+        (x, cheek_y - .012, .075),
+        (.082, .026, .045),
+        blush,
+        28,
+        16,
+    ), head)
+
+# Tiny nostrils are subtle accents, not the dominant feature of the face.
+for x in (-.045, .045):
     parent_preserve_world(uv(
         "Tala_Nostril",
-        (x, muzzle_surface_y - .112, .115),
-        (.013, .009, .015),
+        (x, muzzle_surface_y - .083, .035),
+        (.009, .007, .010),
         nostril_mat,
         16,
         10,
@@ -289,8 +311,8 @@ for x in (-.065, .065):
 
 # Bake the static facial features into the head mesh before export.
 # This avoids relying on a long chain of separately parented face objects in
-# the glTF hierarchy: eyes, pupils, highlights, upper beak, mouth cavity,
-# tongue, nostrils and head scutes become one visible animated head mesh.
+# the glTF hierarchy: eyes, pupils, highlights, muzzle, smile, cheeks,
+# mouth cavity, tongue, nostrils and head scutes become one animated head mesh.
 # Keep the lower beak separate so Eat_Chew can animate its hinge.
 face_curves = [
     obj for obj in scene.objects
@@ -322,8 +344,8 @@ print("Tala face baked into head mesh:", len(head.data.vertices), "vertices")
 # down during chewing rather than sliding as a rigid bead under the face.
 jaw = uv(
     "Tala_Lower_Beak_Jaw",
-    (0.0, mouth_y - .035, -.205),
-    (.190, .105, .078),
+    (0.0, mouth_y - .022, -.205),
+    (.145, .075, .055),
     keratin_lower,
     40,
     24,
