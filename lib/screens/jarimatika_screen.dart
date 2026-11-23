@@ -212,6 +212,17 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   }
 
   void _again() {
+    final current = widget.mission;
+    if (current != null && current.id.startsWith('challenge_')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => JarimatikaScreen(
+            mission: randomChallengeFor(StationKind.jarimatika),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       _right.clear();
       _left.clear();
