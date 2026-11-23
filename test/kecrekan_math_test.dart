@@ -58,6 +58,7 @@ void main() {
           for (var i = 0; i < 5; i++) KecrekanMath.beadX(i, count),
         ];
         for (var i = 1; i < 5; i++) {
+          if (i == 5 - count) continue; // Keep the intentional counting gap.
           expect(
             (positions[i - 1] - positions[i]).abs(),
             closeTo(KecrekanMath.beadDiameter, 1e-9),
