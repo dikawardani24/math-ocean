@@ -18,16 +18,15 @@ blender -b -P tools/blender/build_kecrekan.py -- --mode full
 
 The rebuild writes the GLB, editable blend file and studio preview.
 
-## Design contract — version 3
+## Design contract — version 4
 
 The instrument is intentionally simple and tactile:
 
 - Four chunky, rounded ocean-teal rails form a sturdy rectangular frame.
 - Two subtle champagne-metal accents finish the inner top and bottom edges.
-- Ten satin-silver rods cross the opening.
-- Each rod has ten large, rounded, softly glossy beads.
-- Five ocean-inspired bead colours alternate by row, with a subtle light/dark
-  split to make the five-bead grouping easier to perceive.
+- Up to five satin-silver rods cross the opening; runtime hides unused rows and compacts the frame around the active challenge.
+- Each rod has exactly five large, rounded, softly glossy beads.
+- Five ocean-inspired bead colours alternate by row.
 - No character face, butterfly wings, loop ears, number plaques, stickers,
   coral props or seaweed ornaments. The beads and their movement are the focus.
 
@@ -38,7 +37,7 @@ and the physical counting action remains the dominant interaction.
 
 ### Beads — `Bead_R{rod}_{index}`
 
-- 100 nodes total: rods 0–9, bead indices 00–09.
+- 25 nodes total: rods 0–4, bead indices 00–04.
 - Every bead remains an independent node with its origin at the bead centre.
 - Bead meshes are shared by colour/shade for rendering efficiency.
 - Custom properties preserve `role`, `rod_index`, `bead_index`,
@@ -46,9 +45,9 @@ and the physical counting action remains the dominant interaction.
 
 ### Rods
 
-- `Rod_{rod}`: ten satin-metal cylinders.
+- `Rod_{rod}`: five satin-metal cylinders.
 - `RodCap_{rod}_{L|R}`: gold-toned end caps.
-- `FiveMarker_{rod}`: slim centre marker for the five/five split.
+- `FiveMarker_{rod}`: slim centre marker for the five-bead row.
 
 ### Frame
 
@@ -56,22 +55,22 @@ and the physical counting action remains the dominant interaction.
 - `Frame_LeftPost`, `Frame_RightPost`
 - `Frame_TopAccent`, `Frame_BottomAccent`
 
-The frame and rods never move during play. Only bead node translations are
-updated by the controller.
+The controller hides unused rows, repositions the visible rows, and shortens the frame vertically to fit the active challenge. Bead nodes remain independently draggable.
 
 ## Coordinates and dimensions
 
 | Quantity | Value |
 | --- | --- |
-| Rods | 10 |
-| Beads per rod | 10 |
+| Maximum rows | 5 |
+| Beads per row | 5 |
+| Maximum beads | 25 |
 | Rod length | 2.70 |
 | Rod X extent | −1.35 … +1.35 |
-| Bead X extent | −1.10 … +1.10 |
-| Bead spacing | 0.22 |
-| Bead radius | 0.105 |
-| Bead X scale | 0.82 |
-| Row height step | 0.285 |
+| Bead X extent | −0.95 … +0.95 |
+| Bead spacing | 0.38 |
+| Bead radius | 0.15 |
+| Bead X scale | 0.90 |
+| Active row spacing | 0.52 |
 
 Blender is Z-up; the glTF exporter converts the scene to Y-up. The child-facing
 surface is on runtime −Z, matching the Flutter camera.
@@ -81,7 +80,7 @@ surface is on runtime −Z, matching the Flutter camera.
 `lib/kecrekan/kecrekan_math.dart` owns the count state:
 
 ```dart
-rodCounts[rod] ∈ [0, 10]
+rodCounts[rod] ∈ [0, 5]
 total = sum(rodCounts)
 ```
 
@@ -91,8 +90,8 @@ remain independent of the visual redesign.
 
 ## Validation checklist
 
-- Exactly 100 nodes named `Bead_R0_00` … `Bead_R9_09`.
+- Exactly 25 nodes named `Bead_R0_00` … `Bead_R4_04`.
 - Every bead has its own transform and remains independently draggable.
-- The four frame rails and all rods are visible without horizontal clipping.
+- The four frame rails and only the challenge-required rods are visible without clipping.
 - No cameras or lights are included in the exported GLB.
 - The exported root contains the frame, rods and beads only.
