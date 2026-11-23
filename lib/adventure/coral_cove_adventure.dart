@@ -206,7 +206,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                   ),
                 ),
                 Expanded(
-                  child: Stack(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => Stack(
                     children: [
                       // Swimming turtle companion
                       AnimatedBuilder(
@@ -267,7 +268,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       ),
 
                       // Floating seagrass items in the reef
-                      ..._buildSeagrassItems(context),
+                      ..._buildSeagrassItems(context, constraints),
 
                       // Organic coral abacus (Kecrekan) embedded at the bottom of the reef world
                       Positioned(
@@ -310,6 +311,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                         ),
                       ),
                     ],
+                    ),
                   ),
                 ),
               ],
@@ -401,34 +403,53 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     );
   }
 
-  List<Widget> _buildSeagrassItems(BuildContext context) {
+  List<Widget> _buildSeagrassItems(
+    BuildContext context,
+    BoxConstraints constraints,
+  ) {
+    // The abacus owns the bottom 244 logical pixels. Collectibles are
+    // positioned only in the remaining playfield, never beneath its hit area.
+    const itemSize = 64.0;
+    const reservedBottom = 244.0;
+    final playfieldHeight = math.max(
+      0.0,
+      constraints.maxHeight - reservedBottom,
+    );
+    final maxTop = math.max(0.0, playfieldHeight - itemSize);
     final positions = [
-      const Offset(0.15, 0.35),
-      const Offset(0.75, 0.28),
-      const Offset(0.22, 0.55),
-      const Offset(0.80, 0.52),
-      const Offset(0.50, 0.42),
+      const Offset(0.16, 0.12),
+      const Offset(0.76, 0.08),
+      const Offset(0.22, 0.68),
+      const Offset(0.80, 0.62),
+      const Offset(0.50, 0.36),
     ];
 
     final widgets = <Widget>[];
     for (var i = 0; i < _targetSnacks; i++) {
       if (_collectedSnacks.contains(i)) continue;
       final pos = positions[i % positions.length];
+      final left = (constraints.maxWidth * pos.dx - itemSize / 2)
+          .clamp(8.0, math.max(8.0, constraints.maxWidth - itemSize - 8));
+      final top = (maxTop * pos.dy).clamp(0.0, maxTop);
       widgets.add(
-        AnimatedBuilder(
-          animation: _pulse,
-          builder: (context, child) {
-            final scale = 1.0 + math.sin(_pulse.value * math.pi + i) * 0.08;
-            return Positioned(
-              left: MediaQuery.of(context).size.width * pos.dx - 32,
-              top: MediaQuery.of(context).size.height * pos.dy - 32,
-              child: Transform.scale(
+        Positioned(
+          left: left,
+          top: top,
+          width: itemSize,
+          height: itemSize,
+          child: AnimatedBuilder(
+            animation: _pulse,
+            builder: (context, child) {
+              final scale =
+                  1.0 + math.sin(_pulse.value * math.pi + i) * 0.08;
+              return Transform.scale(
                 scale: scale,
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _collectSnack(i),
                   child: Container(
-                    width: 64,
-                    height: 64,
+                    width: itemSize,
+                    height: itemSize,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: const Color(0xFF063F48).withValues(alpha: 0.28),
@@ -446,9 +467,9 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       );
     }
