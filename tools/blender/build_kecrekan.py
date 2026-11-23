@@ -319,17 +319,14 @@ def make_bead_mesh(name: str, mat: bpy.types.Material, band_mat: bpy.types.Mater
 
 def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) -> None:
     col = collection("Kecrekan_Beads")
-    # Five shared colour meshes keep the row palette varied while all five
-    # beads on a row share the same tactile finish.
-    meshes: dict[tuple[int, bool], bpy.types.Mesh] = {}
+    # One shared mesh per row colour; all five bead nodes remain independent.
+    meshes: dict[int, bpy.types.Mesh] = {}
     for color_index, (name, _deep, _light) in enumerate(BEAD_COLORS):
-        for is_deep in (True, False):
-            mesh_name = f"BeadMesh_{name}_{'Deep' if is_deep else 'Light'}"
-            meshes[(color_index, is_deep)] = make_bead_mesh(
-                mesh_name,
-                mats[f"bead_{color_index}_{'deep' if is_deep else 'light'}"],
-                mats["gold"],
-            )
+        meshes[color_index] = make_bead_mesh(
+            f"BeadMesh_{name}",
+            mats[f"bead_{color_index}_deep"],
+            mats["gold"],
+        )
     # Remove the temporary joined objects from the scene; meshes stay in data.
     for obj in list(bpy.context.scene.objects):
         if obj.name in {m.name for m in meshes.values()}:
@@ -341,7 +338,7 @@ def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) ->
             # Rest state: all beads parked on the right (0 active).  Index 0
             # is furthest right, matching KecrekanMath.beadX.
             x = BEAD_RIGHT - i * BEAD_SPACING
-            mesh = meshes[(color_index, i < 5)]
+            mesh = meshes[color_index]
             bead = bpy.data.objects.new(f"Bead_R{row}_{i:02d}", mesh)
             bead.location = (x, 0.0, ROW_Z[row])
             bead["role"] = "bead"
@@ -464,7 +461,7 @@ def render_preview(path: str) -> None:
 
 
 def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bpy.types.Object:
-    """One rod, ten beads, a small frame — the Phase 2 proof of concept."""
+    """One rod, five beads, a small frame — the Phase 2 proof of concept."""
     col = collection("POC_Frame")
     root = bpy.data.objects.new("KecrekanPOC_Root", None)
     collection("POC_Root").objects.link(root)
@@ -498,7 +495,7 @@ def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bp
             bpy.data.objects.remove(obj, do_unlink=True)
     for i in range(BEADS_PER_ROD):
         x = BEAD_RIGHT - i * BEAD_SPACING
-        bead = bpy.data.objects.new(f"POC_Bead_R0_{i:02d}", coral_mesh if i < 5 else gold_mesh)
+        bead = bpy.data.objects.new(f"POC_Bead_R0_{i:02d}", coral_mesh)
         bead.location = (x, 0.0, 0.0)
         bead["role"] = "bead"
         bead["rod_index"] = 0
