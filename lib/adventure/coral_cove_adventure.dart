@@ -429,7 +429,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       if (_collectedSnacks.contains(i)) continue;
       final pos = positions[i % positions.length];
       final left = (constraints.maxWidth * pos.dx - itemSize / 2)
-          .clamp(8.0, math.max(8.0, constraints.maxWidth - itemSize - 8))\n          .toDouble();
+          .clamp(
+            8.0,
+            math.max(8.0, constraints.maxWidth - itemSize - 8.0),
+          )
+          .toDouble();
       final top = (maxTop * pos.dy).clamp(0.0, maxTop).toDouble();
       widgets.add(
         Positioned(
