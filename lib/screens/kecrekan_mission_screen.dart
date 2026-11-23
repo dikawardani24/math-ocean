@@ -222,6 +222,17 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 
   void _again() {
+    final current = _mission;
+    if (current != null && current.id.startsWith('challenge_')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => KecrekanMissionScreen(
+            mission: randomChallengeFor(current.station),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       _solved = false;
       _celebrate = false;
