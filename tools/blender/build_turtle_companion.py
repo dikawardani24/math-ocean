@@ -58,6 +58,7 @@ shell_light = material("Tala | shell scutes", (0.13, 0.52, 0.37), .34)
 shell_edge = material("Tala | shell rim", (0.025, 0.19, 0.19), .38)
 belly = material("Tala | pale plastron", (0.76, 0.83, 0.58), .48)
 eye_white = material("Tala | eye whites", (1.0, .98, .86), .22)
+eye_iris = material("Tala | deep teal irises", (.075, .30, .29), .22)
 pupil = material("Tala | dark pupils", (.012, .045, .05), .18)
 shine = material("Tala | eye sparkle", (1, 1, 1), .12)
 cheek = material("Tala | warm coral tongue", (.88, .32, .34), .5)
@@ -216,6 +217,14 @@ for side, x in (("L", -.315), ("R", .315)):
         (x, eye_surface_y - .018, .39),
         (.205, .122, .235),
         eye_white,
+        36,
+        24,
+    ), head)
+    parent_preserve_world(uv(
+        "Tala_Iris_" + side,
+        (x * 1.025, eye_surface_y - .092, .375),
+        (.137, .047, .174),
+        eye_iris,
         36,
         24,
     ), head)
