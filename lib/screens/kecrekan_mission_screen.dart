@@ -9,6 +9,7 @@ import '../core/feedback.dart';
 import '../core/models.dart';
 import '../core/progress.dart';
 import '../kecrekan/kecrekan_controller.dart';
+import '../kecrekan/kecrekan_math.dart';
 import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
 import '../widgets/ocean_background.dart';
@@ -55,9 +56,9 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     _target = _mission?.target ?? _randomTarget();
     _controller = KecrekanController(
       initialCount: _mission?.startValue ?? 0,
-      activeRowCount: _rowsForChallenge(
-        _mission?.startValue ?? 0,
-        _target,
+      activeRowCount: KecrekanMath.rowsForChallenge(
+        start: _mission?.startValue ?? 0,
+        target: _target,
       ),
     );
     _shake = AnimationController(
@@ -68,13 +69,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 
   int _randomTarget() => 1 + math.Random().nextInt(10);
-
-  /// Rows are based on the largest number visible in the task, not a fixed
-  /// board size. Subtraction needs enough room for its starting value.
-  int _rowsForChallenge(int start, int target) {
-    final capacity = math.max(start, target).clamp(1, 25).toInt();
-    return ((capacity + 4) ~/ 5).clamp(1, 5).toInt();
-  }
 
   void _speak() {
     if (!mounted) return;
@@ -210,7 +204,10 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
       _encouragement = '';
       if (_isPractice) _target = _randomTarget();
       _controller.setActiveRowCount(
-        _rowsForChallenge(_mission?.startValue ?? 0, _target),
+        KecrekanMath.rowsForChallenge(
+          start: _mission?.startValue ?? 0,
+          target: _target,
+        ),
       );
       _controller.resetTo(_mission?.startValue ?? 0);
     });
