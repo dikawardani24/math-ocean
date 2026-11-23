@@ -43,8 +43,16 @@ def material(name, color, roughness=0.42, metallic=0.0):
     p.inputs["Metallic"].default_value = metallic
     return m
 
-skin = material("Tala | mint green skin", (0.20, 0.72, 0.49), .34)
-skin_light = material("Tala | warm light green", (0.42, 0.88, 0.64), .38)
+# Green turtles have olive/grey-brown skin with pale margins around many
+# head scales. Keep the palette soft and child-friendly, but avoid mint-green
+# plastic skin.
+skin = material("Tala | muted olive skin", (0.31, 0.39, 0.30), .56)
+skin_light = material("Tala | warm olive skin", (0.43, 0.48, 0.34), .52)
+skin_scale_edge = material("Tala | pale olive scale margins", (0.62, 0.59, 0.40), .58)
+skin_scale_fill = material("Tala | head scale centers", (0.39, 0.45, 0.32), .54)
+skin_scale_alt = material("Tala | alternate head scales", (0.34, 0.40, 0.31), .58)
+keratin = material("Tala | upper jaw keratin", (0.55, 0.52, 0.39), .48)
+keratin_lower = material("Tala | lower jaw keratin", (0.48, 0.47, 0.36), .5)
 shell = material("Tala | deep jade shell", (0.035, 0.29, 0.25), .3)
 shell_light = material("Tala | shell scutes", (0.13, 0.52, 0.37), .34)
 shell_edge = material("Tala | shell rim", (0.025, 0.19, 0.19), .38)
@@ -52,8 +60,9 @@ belly = material("Tala | pale plastron", (0.76, 0.83, 0.58), .48)
 eye_white = material("Tala | eye whites", (1.0, .98, .86), .22)
 pupil = material("Tala | dark pupils", (.012, .045, .05), .18)
 shine = material("Tala | eye sparkle", (1, 1, 1), .12)
-cheek = material("Tala | coral cheeks", (1, .39, .34), .42)
-mouth_mat = material("Tala | mouth", (.045, .20, .16), .5)
+cheek = material("Tala | soft warm cheek", (.69, .47, .34), .56)
+mouth_mat = material("Tala | mouth groove", (.10, .15, .12), .62)
+nostril_mat = material("Tala | nostril shadow", (.13, .18, .13), .64)
 
 def smooth(obj):
     if obj.type == "MESH":
@@ -71,6 +80,78 @@ def uv(name, location, scale, mat, segments=32, rings=20):
 
 def parent_to(root, obj):
     obj.parent = root
+    return obj
+
+def parent_preserve_world(obj, parent):
+    # Attach a facial detail to the animated head without changing its
+    # authored world-space position.
+    obj.parent = parent
+    obj.matrix_parent_inverse = parent.matrix_world.inverted()
+    return obj
+
+HEAD_CENTER = (0.0, -1.18, 0.18)
+HEAD_RADII = (.58, .56, .49)
+
+def head_surface_point(x, z, depth=.012):
+    # Project facial details onto the front hemisphere of the head. This
+    # prevents the mouth/scales from floating in front of the muzzle.
+    nx = x / HEAD_RADII[0]
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    remaining = max(.025, 1.0 - nx * nx - nz * nz)
+    y = HEAD_CENTER[1] - HEAD_RADII[1] * math.sqrt(remaining) - depth
+    return (x, y, z)
+
+def surface_patch(name, points, mat, depth=.012, parent=None):
+    cx = sum(p[0] for p in points) / len(points)
+    cz = sum(p[1] for p in points) / len(points)
+    vertices = [head_surface_point(cx, cz, depth + .002)]
+    vertices.extend(head_surface_point(x, z, depth) for x, z in points)
+    faces = []
+    for i in range(len(points)):
+        faces.append((0, i + 1, ((i + 1) % len(points)) + 1))
+    mesh = bpy.data.meshes.new(name + "_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(mat)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    scene.collection.objects.link(obj)
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    if parent is not None:
+        parent_preserve_world(obj, parent)
+    return obj
+
+def make_head_scale(name, center_x, center_z, width, height, mat, parent):
+    # Small polygonal plates with a soft pale margin echo real green-turtle
+    # head scutes without turning the face into hard armour.
+    unit = [
+        (-.56, -1.0), (.46, -.94), (1.0, -.18), (.74, .70),
+        (.02, 1.0), (-.78, .66), (-1.0, -.16),
+    ]
+    def scaled(factor):
+        return [
+            (center_x + x * width * factor, center_z + z * height * factor)
+            for x, z in unit
+        ]
+    surface_patch(name + "_Margin", scaled(1.0), skin_scale_edge, .012, parent)
+    surface_patch(name, scaled(.87), mat, .019, parent)
+
+def surface_curve(name, coordinates, mat, bevel, depth, parent):
+    curve = bpy.data.curves.new(name + "_Curve", type="CURVE")
+    curve.dimensions = "3D"
+    curve.resolution_u = 16
+    curve.bevel_depth = bevel
+    curve.bevel_resolution = 3
+    spline = curve.splines.new("BEZIER")
+    spline.bezier_points.add(len(coordinates) - 1)
+    for point, (x, z) in zip(spline.bezier_points, coordinates):
+        point.co = head_surface_point(x, z, depth)
+        point.handle_left_type = "AUTO"
+        point.handle_right_type = "AUTO"
+    obj = bpy.data.objects.new(name, curve)
+    scene.collection.objects.link(obj)
+    curve.materials.append(mat)
+    obj.parent = parent
     return obj
 
 def make_paddle(name, location, scale, rotation, mat):
@@ -106,59 +187,66 @@ flippers["FrontRight"] = parent_to(root, make_paddle("Tala_Front_Flipper_R", (.7
 flippers["RearLeft"] = parent_to(root, make_paddle("Tala_Rear_Flipper_L", (-.64, .72, -.02), (.25, .48, .14), (0, -.22, -.38), skin_light))
 flippers["RearRight"] = parent_to(root, make_paddle("Tala_Rear_Flipper_R", (.64, .72, -.02), (.25, .48, .14), (0, .22, .38), skin_light))
 
-# Neck and oversized friendly head at the front (-Y).
+# Neck and friendly, slightly blunt head at the front (-Y).
 neck = parent_to(root, uv("Tala_Neck", (0, -.83, .08), (.43, .53, .32), skin))
 head = parent_to(root, uv("Tala_Head", (0, -1.18, .18), (.58, .56, .49), skin_light, 40, 28))
-# Eyes look slightly forward and outwards.
-for side, x in (("L", -.30), ("R", .30)):
-    parent_to(root, uv("Tala_EyeWhite_" + side, (x, -1.59, .39), (.19, .105, .22), eye_white))
-    parent_to(root, uv("Tala_Pupil_" + side, (x * 1.02, -1.681, .37), (.092, .052, .125), pupil))
-    parent_to(root, uv("Tala_EyeSparkle_" + side, (x * 1.02 - .035, -1.727, .425), (.035, .022, .045), shine, 20, 12))
-    parent_to(root, uv("Tala_Cheek_" + side, (x * 1.48, -1.55, .08), (.105, .045, .065), cheek, 20, 12))
-# Tiny rounded beak and a simple curved smile. Keep the mouth small:
-# the eyes and cheek shapes should do most of the character's expression.
-beak = parent_to(root, uv(
-    "Tala_Upper_Beak",
-    (0, -1.715, -.005),
-    (.115, .052, .065),
-    skin_light,
-    32,
-    20,
-))
-# A narrow smile sits directly on the muzzle surface, with raised corners.
-mouth_curve = bpy.data.curves.new("Tala_Smile_Seam_Curve", type="CURVE")
-mouth_curve.dimensions = "3D"
-mouth_curve.resolution_u = 20
-mouth_curve.bevel_depth = .009
-mouth_curve.bevel_resolution = 4
-spline = mouth_curve.splines.new("BEZIER")
-spline.bezier_points.add(4)
-smile_points = [
-    (-.155, -1.697, -.045),
-    (-.105, -1.704, -.092),
-    (0.0, -1.675, -.115),
-    (.105, -1.704, -.092),
-    (.155, -1.697, -.045),
-]
-for point, coordinate in zip(spline.bezier_points, smile_points):
-    point.co = coordinate
-    point.handle_left_type = "AUTO"
-    point.handle_right_type = "AUTO"
-smile = bpy.data.objects.new("Tala_Smile_Seam", mouth_curve)
-scene.collection.objects.link(smile)
-smile.data.materials.append(mouth_mat)
-parent_to(root, smile)
 
-# A tiny lower lip/jaw moves down for each chew instead of stretching a large
-# dark mouth shape across the face.
-jaw = parent_to(root, uv(
-    "Tala_Lower_Jaw",
-    (0, -1.635, -.155),
-    (.145, .072, .045),
-    skin,
-    28,
-    18,
-))
+# A real green turtle has a recognizable pair of elongated prefrontal scales
+# between the eyes, plus smaller polygonal plates around the temples and cheeks.
+make_head_scale("Tala_Prefrontal_Scale_L", -.085, .51, .073, .105, skin_scale_fill, head)
+make_head_scale("Tala_Prefrontal_Scale_R", .085, .51, .073, .105, skin_scale_alt, head)
+make_head_scale("Tala_Temporal_Scale_L", -.405, .36, .062, .075, skin_scale_alt, head)
+make_head_scale("Tala_Temporal_Scale_R", .405, .36, .062, .075, skin_scale_fill, head)
+make_head_scale("Tala_Cheek_Scale_L", -.435, .105, .052, .064, skin_scale_fill, head)
+make_head_scale("Tala_Cheek_Scale_R", .435, .105, .052, .064, skin_scale_alt, head)
+
+# Big, soft eyes preserve Tala's friendly expression, but all facial details
+# now follow the head's idle/eating motion instead of hovering independently.
+for side, x in (("L", -.30), ("R", .30)):
+    parent_preserve_world(uv("Tala_EyeWhite_" + side, (x, -1.59, .39), (.19, .105, .22), eye_white), head)
+    parent_preserve_world(uv("Tala_Pupil_" + side, (x * 1.02, -1.681, .37), (.092, .052, .125), pupil), head)
+    parent_preserve_world(uv("Tala_EyeSparkle_" + side, (x * 1.02 - .035, -1.727, .425), (.035, .022, .045), shine, 20, 12), head)
+    parent_preserve_world(uv("Tala_Cheek_" + side, (x * 1.34, -1.55, .075), (.075, .028, .045), cheek, 20, 12), head)
+
+# Green turtles do not have a duck-like protruding beak or a human smile.
+# Their short, rounded upper and lower jaws are covered by keratinous plates.
+# These shallow surfaces are projected onto the actual head shape.
+upper_jaw_points = [
+    (-.18, -.075), (-.166, -.035), (-.105, -.006), (0.0, .004),
+    (.105, -.006), (.166, -.035), (.18, -.075), (.125, -.112),
+    (0.0, -.125), (-.125, -.112),
+]
+surface_patch("Tala_Upper_Rhamphotheca", upper_jaw_points, keratin, .021, head)
+
+lower_jaw_points = [
+    (-.158, -.137), (-.143, -.177), (-.092, -.211), (0.0, -.222),
+    (.092, -.211), (.143, -.177), (.158, -.137), (.112, -.128),
+    (0.0, -.134), (-.112, -.128),
+]
+jaw = surface_patch("Tala_Lower_Rhamphotheca", lower_jaw_points, keratin_lower, .021, head)
+
+# The closed mouth is a very fine jaw junction, not a thick black smile.
+# It follows the muzzle surface and is attached to the moving lower jaw so
+# the seam separates naturally during the chew animation.
+mouth_line = [
+    (-.153, -.119), (-.078, -.128), (0.0, -.132),
+    (.078, -.128), (.153, -.119),
+]
+surface_curve("Tala_Jaw_Junction", mouth_line, mouth_mat, .006, .031, jaw)
+
+# Two tiny recessed-looking nostrils sit above the upper jaw.
+for x in (-.067, .067):
+    nostril_y = head_surface_point(x, .105, .018)[1]
+    nostril = uv(
+        "Tala_Nostril",
+        (x, nostril_y, .105),
+        (.012, .007, .009),
+        nostril_mat,
+        16,
+        10,
+    )
+    parent_preserve_world(nostril, head)
+
 # Small tail visible behind the shell.
 tail = parent_to(root, uv("Tala_Tail", (0, 1.02, -.02), (.19, .38, .13), skin))
 
@@ -196,8 +284,8 @@ for name, obj in flippers.items():
 set_action(head, "Idle_Swim", [(1, 0), (13, .035), (25, 0), (37, -.025), (49, 0)], "rotation_euler", 0)
 set_action(head, "Eat_Chew", [(1, 0), (5, .10), (10, -.06), (15, .10), (20, -.04), (25, 0)], "rotation_euler", 0)
 set_action(head, "Happy_Reaction", [(1, 0), (8, -.10), (16, .06), (24, 0), (32, -.03)], "rotation_euler", 0)
-set_action(jaw, "Eat_Chew", [(1, -.155), (4, -.205), (8, -.155), (12, -.205), (16, -.155), (20, -.205), (24, -.155), (28, -.155)], "location", 2)
-set_action(jaw, "Happy_Reaction", [(1, -.155), (8, -.18), (16, -.155), (24, -.175), (32, -.155)], "location", 2)
+set_action(jaw, "Eat_Chew", [(1, 0), (4, -.026), (8, 0), (12, -.026), (16, 0), (20, -.026), (24, 0), (28, 0)], "location", 2)
+set_action(jaw, "Happy_Reaction", [(1, 0), (8, -.012), (16, 0), (24, -.009), (32, 0)], "location", 2)
 set_action(tail, "Idle_Swim", [(1, 0), (13, .12), (25, 0), (37, -.12), (49, 0)], "rotation_euler", 2)
 
 # Use NLA tracks as glTF animation clips. All mesh geometry remains shared by the
