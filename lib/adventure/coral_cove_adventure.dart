@@ -13,6 +13,7 @@ import '../kecrekan/kecrekan_controller.dart';
 import '../kecrekan/kecrekan_math.dart';
 import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
+import '../widgets/coral_cove_3d_backdrop.dart';
 import '../widgets/turtle_companion.dart';
 import '../widgets/ui_kit.dart';
 
@@ -187,7 +188,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
         fit: StackFit.expand,
         children: [
           // Living reef backdrop with dynamic light rays
-          const _ReefWorldBackdrop(),
+          const CoralCove3DBackdrop(),
 
           SafeArea(
             child: Column(
