@@ -71,8 +71,7 @@ class StationScreen extends StatelessWidget {
                         kind: kind,
                         progress: progress,
                         onDive: () {
-                          final mission = progress.nextMission(kind);
-                          if (mission == null) return;
+                          final mission = randomChallengeFor(kind);
                           if (isJarima &&
                               !progress.jarimatikaChallengeUnlocked) {
                             Navigator.of(context).push(
