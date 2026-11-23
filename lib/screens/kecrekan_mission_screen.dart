@@ -195,6 +195,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
       _celebrate = false;
       _attempts = 0;
       _usedHint = false;
+      _promptExpanded = true;
       _encouragement = '';
       if (_isPractice) _target = _randomTarget();
       _controller.resetTo(_mission?.startValue ?? 0);
