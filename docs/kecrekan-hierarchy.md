@@ -64,11 +64,11 @@ The controller hides unused rows, repositions the visible rows, and shortens the
 | Maximum rows | 5 |
 | Beads per row | 5 |
 | Maximum beads | 25 |
-| Rod length | 2.35 |
-| Rod X extent | −1.175 … +1.175 |
-| Bead X extent (centres) | −0.95 … +0.95 |
-| Frame inner X extent | −1.085 … +1.085 |
-| Bead spacing | 0.38 |
+| Rod length | 1.80 |
+| Rod X extent | −0.90 … +0.90 |
+| Bead X extent (centres) | −0.675 … +0.675 |
+| Frame inner X extent | −0.81 … +0.81 |
+| Bead spacing | 0.27 (touching) |
 | Bead radius | 0.15 |
 | Bead X scale | 0.90 |
 | Active row spacing | 0.52 |
