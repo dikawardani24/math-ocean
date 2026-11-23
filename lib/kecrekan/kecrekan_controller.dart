@@ -104,7 +104,7 @@ class KecrekanController extends ChangeNotifier {
   void _collectBeads(Node node) {
     final beadPattern = RegExp(r'^Bead_R(\d+)_(\d+)$');
     final rowPattern = RegExp(
-      r'^(?:Rod_(\d+)|RodCap_(\d+)_|FiveMarker_(\d+)|Bead_R(\d+)_',
+      r'^(?:Rod_(\d+)|RodCap_(\d+)_|FiveMarker_(\d+)|Bead_R(\d+)_)',
     );
 
     void walk(Node current) {
