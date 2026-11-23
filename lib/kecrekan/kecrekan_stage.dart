@@ -96,6 +96,9 @@ class _KecrekanStageState extends State<KecrekanStage> {
     );
     if (worldX == null) return;
     widget.controller.beginBeadDrag(bead, worldX);
+    // Collapse the mission details as soon as the child grabs a bead,
+    // not only after the bead crosses the counting threshold.
+    _notifyTouched();
   }
 
   void _panUpdate(DragUpdateDetails details) {
