@@ -148,6 +148,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         _size = Size(constraints.maxWidth, constraints.maxHeight);
+        widget.controller.updateCameraForViewport(_size);
         return AnimatedBuilder(
           animation: widget.controller,
           builder: (context, _) {
