@@ -102,7 +102,124 @@ class KecrekanController extends ChangeNotifier {
   }
 
   void _collectBeads(Node node) {
-    final beadPattern = RegExp(r'^Bead_R(\d+)_(\d+)
+    final beadPattern = RegExp(r'^Bead_R(\d+)_(\d+)$');
+    final rowPattern = RegExp(
+      r'^(?:Rod_(\d+)|RodCap_(\d+)_|FiveMarker_(\d+)|Bead_R(\d+)_',
+    );
+
+    void walk(Node current) {
+      if (current.name.startsWith('Frame_')) {
+        _frameNodes[current.name] = current;
+      }
+
+      final rowMatch = rowPattern.firstMatch(current.name);
+      if (rowMatch != null) {
+        final row = int.parse(
+          rowMatch.group(1) ??
+              rowMatch.group(2) ??
+              rowMatch.group(3) ??
+              rowMatch.group(4)!,
+        );
+        _rowNodes.putIfAbsent(row, () => []).add(current);
+      }
+
+      final match = beadPattern.firstMatch(current.name);
+      if (match != null) {
+        final rod = int.parse(match.group(1)!);
+        final index = int.parse(match.group(2)!);
+        final p = current.position;
+        final bead = KecrekanBead(
+          node: current,
+          rod: rod,
+          index: index,
+          x: p.x,
+          y: p.y,
+          z: p.z,
+        );
+        _beadsByName[current.name] = bead;
+        _allBeads.add(bead);
+      }
+
+      for (final child in current.children) {
+        walk(child);
+      }
+    }
+
+    walk(node);
+    _allBeads.sort((a, b) {
+      final rod = a.rod.compareTo(b.rod);
+      return rod != 0 ? rod : a.index.compareTo(b.index);
+    });
+  }
+
+  /// Show only the rows needed for this challenge and compact the frame around
+  /// them. The bead diameter and horizontal spacing never change.
+  void setActiveRowCount(int count, {bool notify = true}) {
+    activeRowCount = count.clamp(1, KecrekanMath.rodCount).toInt();
+
+    for (final entry in _rowNodes.entries) {
+      final visible = entry.key < activeRowCount;
+      for (final node in entry.value) {
+        node.visible = visible;
+      }
+    }
+
+    const rowSpacing = 0.52;
+    for (final bead in _allBeads) {
+      final rowY = bead.rod < activeRowCount
+          ? (bead.rod - (activeRowCount - 1) / 2) * rowSpacing
+          : 0.0;
+      bead.y = rowY;
+      bead.node.position = vm.Vector3(bead.x, rowY, bead.z);
+    }
+
+    for (final entry in _rowNodes.entries) {
+      final rowY = entry.key < activeRowCount
+          ? (entry.key - (activeRowCount - 1) / 2) * rowSpacing
+          : 0.0;
+      for (final node in entry.value) {
+        if (node.name.startsWith('Bead_R')) continue;
+        final p = node.position;
+        node.position = vm.Vector3(p.x, rowY, p.z);
+      }
+    }
+
+    final frameHalfHeight = (activeRowCount - 1) * rowSpacing / 2 + 0.35;
+    final top = _frameNodes['Frame_TopRail'];
+    if (top != null) {
+      final p = top.position;
+      top.position = vm.Vector3(p.x, frameHalfHeight, p.z);
+    }
+    final bottom = _frameNodes['Frame_BottomRail'];
+    if (bottom != null) {
+      final p = bottom.position;
+      bottom.position = vm.Vector3(p.x, -frameHalfHeight, p.z);
+    }
+    final topAccent = _frameNodes['Frame_TopAccent'];
+    if (topAccent != null) {
+      final p = topAccent.position;
+      topAccent.position = vm.Vector3(p.x, frameHalfHeight - 0.125, p.z);
+    }
+    final bottomAccent = _frameNodes['Frame_BottomAccent'];
+    if (bottomAccent != null) {
+      final p = bottomAccent.position;
+      bottomAccent.position = vm.Vector3(p.x, -frameHalfHeight + 0.125, p.z);
+    }
+
+    final postScaleY = (frameHalfHeight * 2) / 3.20;
+    for (final name in ['Frame_LeftPost', 'Frame_RightPost']) {
+      final post = _frameNodes[name];
+      if (post == null) continue;
+      final scale = post.scale;
+      post.scale = vm.Vector3(scale.x, postScaleY, scale.z);
+    }
+
+    beads
+      ..clear()
+      ..addAll(_allBeads.where((bead) => bead.rod < activeRowCount));
+
+    if (notify) notifyListeners();
+  }
 
   void _applyInitial(int value) {
     math.setTotal(value);
@@ -327,8 +444,7 @@ class KecrekanController extends ChangeNotifier {
     _frameNodes.clear();
     scene.dispose();
     super.dispose();
-  }
-}
+  }}
 );
     final rowPattern = RegExp(
       r'^(?:Rod_(\d+)|RodCap_(\d+)_|FiveMarker_(\d+)|Bead_R(\d+)_)',
