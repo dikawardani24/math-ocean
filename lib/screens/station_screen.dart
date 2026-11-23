@@ -200,6 +200,80 @@ class StationScreen extends StatelessWidget {
   }
 }
 
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.onTap,
+    this.locked = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final VoidCallback onTap;
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: OceanColors.shell.withValues(alpha: 0.97),
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(icon, color: color, size: 29),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: OceanColors.ink,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: OceanColors.inkSoft,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                locked ? Icons.lock_rounded : Icons.arrow_forward_ios_rounded,
+                color: OceanColors.inkSoft,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StationHero extends StatelessWidget {
   const _StationHero({
     required this.kind,
