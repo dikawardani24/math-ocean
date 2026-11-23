@@ -85,16 +85,16 @@ def grass(x,y,z,material,seed):
 # seabed and distant ocean wall
 bpy.ops.mesh.primitive_plane_add(size=18, location=(0,0,-.25)); floor=bpy.context.object
 floor.name="Sandy seabed"; floor.data.materials.append(sand); move_col(floor,"01 Environment")
-bpy.ops.mesh.primitive_cube_add(size=1, location=(0,7,4), scale=(18,.5,12)); wall=bpy.context.object
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0,7,5), scale=(18,.5,22)); wall=bpy.context.object
 wall.name="Ocean distance"; wall.data.materials.append(blue); move_col(wall,"01 Environment")
 # rolling reef mounds
 for i,(x,y,s) in enumerate([(-5,3,2.4),(-2.8,4.2,2.1),(0,4.5,2.5),(2.8,3.8,2.6),(5,2.5,2.3),(-5,-1.2,2.0),(5,-1.2,2.0),(0,-3.5,1.8)]):
     o=uv("Reef foundation",(x,y,.05),(s,s*.8,s*.55),rock if i%2 else rock2); move_col(o,"02 Reef")
 # Foreground reef stones: oversized, readable silhouettes in the portrait play area.
 for i, (x, y, sx, sy, sz) in enumerate([
-    (-3.7, -4.2, 1.45, 1.05, .95), (-1.8, -4.8, .95, .78, .62),
-    (2.0, -4.5, 1.35, .95, .82), (3.8, -3.6, .9, .72, .68),
-    (-4.4, -.8, .85, .72, .62), (4.3, .1, .95, .8, .7),
+    (-3.7, 1.0, 1.45, 1.05, .95), (-1.8, .2, .95, .78, .62),
+    (2.0, .5, 1.35, .95, .82), (3.8, 1.4, .9, .72, .68),
+    (-4.4, 2.0, .85, .72, .62), (4.3, 2.1, .95, .8, .7),
 ]):
     stone = uv("Foreground reef stone", (x, y, sz * .48), (sx, sy, sz), rock if i % 2 else rock2)
     stone.rotation_euler[2] = random.uniform(-.35, .35)
