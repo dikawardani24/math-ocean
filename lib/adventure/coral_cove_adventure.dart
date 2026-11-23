@@ -272,10 +272,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       Positioned(
                         left: 16,
                         right: 16,
-                        bottom: 12,
-                        height: 220,
+                        bottom: 8,
+                        height: 184,
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF043B46).withValues(alpha: 0.88),
                             borderRadius: BorderRadius.circular(24),
