@@ -15,6 +15,17 @@ class KecrekanMath {
   static const double rightX = 0.95;
   static const double spacing = 0.38;
 
+  /// Minimum visible rows needed to represent a challenge's starting and
+  /// ending values. A subtraction task must fit its starting value even when
+  /// the number of beads moved is smaller.
+  static int rowsForChallenge({required int start, required int target}) {
+    final capacity = start > target ? start : target;
+    final bounded = capacity.clamp(1, rodCount * beadsPerRod).toInt();
+    return ((bounded + beadsPerRod - 1) ~/ beadsPerRod)
+        .clamp(1, rodCount)
+        .toInt();
+  }
+
   final List<int> rodCounts = List<int>.filled(rodCount, 0);
 
   int get total => rodCounts.fold(0, (a, b) => a + b);
