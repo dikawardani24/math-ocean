@@ -245,40 +245,38 @@ for side, x in (("L", -.315), ("R", .315)):
         12,
     ), head)
 
-# Soft rounded muzzle, blended into the lower half of the head. This gives
-# the cartoon mouth a physical surface instead of floating facial decals.
+# A distinct rounded upper beak sits above a clearly open mouth.
+# The dark cavity is pushed forward beyond the face surface so it cannot
+# disappear into the muzzle when rendered from the front.
 muzzle_surface_y = head_surface_point(0.0, .015, .025)[1]
-muzzle = parent_preserve_world(uv(
-    "Tala_Rounded_Muzzle",
-    (0.0, muzzle_surface_y - .018, .025),
-    (.225, .105, .145),
-    skin_light,
-    36,
+upper_beak = parent_preserve_world(uv(
+    "Tala_Upper_Beak",
+    (0.0, muzzle_surface_y - .045, -.005),
+    (.235, .145, .125),
+    keratin,
+    40,
     24,
 ), head)
 
-# A compact, clearly readable mouth cavity sits under the rounded upper
-# beak. Avoid the wide human-style smile: sea turtles have a short keratin
-# beak, so the opening is a small horizontal bite rather than a grin.
-mouth_y = muzzle_surface_y - .105
+mouth_y = muzzle_surface_y - .165
 mouth = parent_preserve_world(uv(
-    "Tala_Mouth_Cavity",
-    (0.0, mouth_y, -.075),
-    (.145, .025, .060),
+    "Tala_Open_Mouth_Cavity",
+    (0.0, mouth_y, -.112),
+    (.158, .035, .064),
     mouth_mat,
-    36,
-    20,
+    40,
+    24,
 ), head)
 tongue = parent_preserve_world(uv(
     "Tala_Tongue",
-    (0.0, mouth_y - .019, -.105),
-    (.060, .012, .020),
+    (0.0, mouth_y - .026, -.145),
+    (.075, .014, .022),
     cheek,
-    24,
-    14,
+    28,
+    16,
 ), head)
 
-# Two tiny nostrils sit high on the muzzle, clearly separated from the mouth.
+# Two tiny nostrils sit high on the upper beak, separated from the mouth.
 for x in (-.065, .065):
     parent_preserve_world(uv(
         "Tala_Nostril",
@@ -291,9 +289,9 @@ for x in (-.065, .065):
 
 # Bake the static facial features into the head mesh before export.
 # This avoids relying on a long chain of separately parented face objects in
-# the glTF hierarchy: eyes, pupils, highlights, muzzle, smile, nostrils and
-# head scutes become one guaranteed-visible animated head mesh. Keep the
-# lower jaw separate so Eat_Chew can still animate it.
+# the glTF hierarchy: eyes, pupils, highlights, upper beak, mouth cavity,
+# tongue, nostrils and head scutes become one visible animated head mesh.
+# Keep the lower beak separate so Eat_Chew can animate its hinge.
 face_curves = [
     obj for obj in scene.objects
     if obj.parent == head and obj.type == "CURVE"
@@ -320,20 +318,19 @@ head.name = "Tala_Head_With_Face"
 head.data.name = "Tala_Head_With_Face_Mesh"
 print("Tala face baked into head mesh:", len(head.data.vertices), "vertices")
 
-# The lower jaw is a distinct rounded piece. A hinge empty lets the jaw
-# rotate open instead of sliding as a rigid bead under the face.
-jaw_surface_y = head_surface_point(0.0, -.135, .022)[1]
+# Separate lower beak/jaw. The hinge is behind the jaw so it swings
+# down during chewing rather than sliding as a rigid bead under the face.
 jaw = uv(
-    "Tala_Lower_Jaw",
-    (0.0, mouth_y - .015, -.155),
-    (.195, .095, .075),
-    skin,
-    36,
-    22,
+    "Tala_Lower_Beak_Jaw",
+    (0.0, mouth_y - .035, -.205),
+    (.190, .105, .078),
+    keratin_lower,
+    40,
+    24,
 )
 jaw_hinge = bpy.data.objects.new("Tala_Jaw_Hinge", None)
 scene.collection.objects.link(jaw_hinge)
-jaw_hinge.location = (0.0, jaw.location.y + .075, -.105)
+jaw_hinge.location = (0.0, jaw.location.y + .085, -.145)
 parent_preserve_world(jaw_hinge, head)
 parent_preserve_world(jaw, jaw_hinge)
 
