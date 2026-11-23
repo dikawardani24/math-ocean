@@ -139,24 +139,13 @@ class StationScreen extends StatelessWidget {
                                   ),
                                 );
                               } else {
-                                showDialog<void>(
-                                  context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    backgroundColor: OceanColors.shell,
-                                    title: Text('${kind.stationName} · Learn'),
-                                    content: Text(
-                                      kind == StationKind.counting
-                                          ? 'Move one bead for each treasure you see. Count slowly and notice that every bead stands for one object.'
-                                          : kind == StationKind.addition
-                                          ? 'Start with the first group already counted. When more treasures arrive, join the groups and count how many there are altogether.'
-                                          : 'Start with the whole group. When some treasures disappear, move those beads back and count how many remain.',
+                                final lesson = missionsFor(kind).first;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => KecrekanMissionScreen(
+                                      mission: lesson,
+                                      practice: true,
                                     ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(dialogContext),
-                                        child: const Text('Let’s try'),
-                                      ),
-                                    ],
                                   ),
                                 );
                               }
