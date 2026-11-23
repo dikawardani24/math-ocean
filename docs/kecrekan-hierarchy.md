@@ -30,7 +30,7 @@ The instrument is intentionally simple and tactile:
 - No character face, butterfly wings, loop ears, number plaques, stickers,
   coral props or seaweed ornaments. The beads and their movement are the focus.
 
-The frame is kept visually quiet so the child can identify the beads quickly
+The inner faces of the side posts align with the outer bead surfaces at each travel endpoint, eliminating dead space at the ends of the rod. The frame is kept visually quiet so the child can identify the beads quickly
 and the physical counting action remains the dominant interaction.
 
 ## Runtime node names
@@ -64,9 +64,10 @@ The controller hides unused rows, repositions the visible rows, and shortens the
 | Maximum rows | 5 |
 | Beads per row | 5 |
 | Maximum beads | 25 |
-| Rod length | 2.70 |
-| Rod X extent | −1.35 … +1.35 |
-| Bead X extent | −0.95 … +0.95 |
+| Rod length | 2.35 |
+| Rod X extent | −1.175 … +1.175 |
+| Bead X extent (centres) | −0.95 … +0.95 |
+| Frame inner X extent | −1.085 … +1.085 |
 | Bead spacing | 0.38 |
 | Bead radius | 0.15 |
 | Bead X scale | 0.90 |
