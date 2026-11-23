@@ -293,25 +293,28 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         children: [
                           Positioned.fill(
                             child: AnimatedBuilder(
-                        animation: _shake,
-                        builder: (context, child) {
-                          final t = _shake.value;
-                          final dx = math.sin(t * math.pi * 7) * (1 - t) * 9;
-                          return Transform.translate(
-                            offset: Offset(dx, 0),
-                            child: child,
-                          );
-                        },
-                            child: KecrekanStage(
-                              controller: _controller,
-                              onInteraction: () {
-                                if (_promptExpanded || _encouragement.isNotEmpty) {
-                                  setState(() {
-                                    _promptExpanded = false;
-                                    _encouragement = '';
-                                  });
-                                }
+                              animation: _shake,
+                              builder: (context, child) {
+                                final t = _shake.value;
+                                final dx =
+                                    math.sin(t * math.pi * 7) * (1 - t) * 9;
+                                return Transform.translate(
+                                  offset: Offset(dx, 0),
+                                  child: child,
+                                );
                               },
+                              child: KecrekanStage(
+                                controller: _controller,
+                                onInteraction: () {
+                                  if (_promptExpanded ||
+                                      _encouragement.isNotEmpty) {
+                                    setState(() {
+                                      _promptExpanded = false;
+                                      _encouragement = '';
+                                    });
+                                  }
+                                },
+                              ),
                             ),
                           ),
                           if (!_promptExpanded)
