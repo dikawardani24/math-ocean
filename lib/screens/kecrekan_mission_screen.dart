@@ -104,6 +104,12 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 
   void _hint() {
+    final mission = _mission;
+    if (!_eventRevealed &&
+        mission != null &&
+        (mission.isAddition || mission.isSubtraction)) {
+      setState(() => _eventRevealed = true);
+    }
     final progress = ProgressScope.read(context);
     setState(() {
       _usedHint = true;
@@ -231,7 +237,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
         ),
       );
       _controller.resetTo(_mission?.startValue ?? 0);
-      _eventRevealed = false;
     });
     _speak();
   }
