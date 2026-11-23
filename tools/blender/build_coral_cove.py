@@ -21,7 +21,16 @@ random.seed(23)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE_NEXT"
+# Blender versions expose different Eevee engine identifiers. Pick the best
+# available engine instead of assuming the Blender 4.x identifier exists.
+available_engines = {
+    item.identifier
+    for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items
+}
+scene.render.engine = next(
+    engine for engine in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES")
+    if engine in available_engines
+)
 scene.render.resolution_x, scene.render.resolution_y = 1440, 900
 scene.render.resolution_percentage = 75
 scene.render.image_settings.file_format = "PNG"
