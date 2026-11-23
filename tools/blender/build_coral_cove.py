@@ -31,7 +31,7 @@ scene.render.engine = next(
     engine for engine in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES")
     if engine in available_engines
 )
-scene.render.resolution_x, scene.render.resolution_y = 1440, 900
+scene.render.resolution_x, scene.render.resolution_y = 900, 1440
 scene.render.resolution_percentage = 75
 scene.render.image_settings.file_format = "PNG"
 scene.view_settings.view_transform = "AgX"
@@ -83,43 +83,53 @@ def grass(x,y,z,material,seed):
         p0=(x+dx*.15,y,z); p1=(x+dx,y,z+h)
         cylinder("Seagrass blade",p0,p1,.07,material,8)
 # seabed and distant ocean wall
-bpy.ops.mesh.primitive_plane_add(size=40, location=(0,0,-.25)); floor=bpy.context.object
+bpy.ops.mesh.primitive_plane_add(size=18, location=(0,0,-.25)); floor=bpy.context.object
 floor.name="Sandy seabed"; floor.data.materials.append(sand); move_col(floor,"01 Environment")
-bpy.ops.mesh.primitive_cube_add(size=1, location=(0,7,4), scale=(30,.5,12)); wall=bpy.context.object
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0,7,4), scale=(18,.5,12)); wall=bpy.context.object
 wall.name="Ocean distance"; wall.data.materials.append(blue); move_col(wall,"01 Environment")
 # rolling reef mounds
-for i,(x,y,s) in enumerate([(-7,3,2.5),(-4,5,2.0),(0,5,2.4),(4,4,2.8),(7,2,2.2),(-8,-1,1.8),(7,-1,1.8)]):
+for i,(x,y,s) in enumerate([(-5,3,2.4),(-2.8,4.2,2.1),(0,4.5,2.5),(2.8,3.8,2.6),(5,2.5,2.3),(-5,-1.2,2.0),(5,-1.2,2.0),(0,-3.5,1.8)]):
     o=uv("Reef foundation",(x,y,.05),(s,s*.8,s*.55),rock if i%2 else rock2); move_col(o,"02 Reef")
+# Foreground reef stones: oversized, readable silhouettes in the portrait play area.
+for i, (x, y, sx, sy, sz) in enumerate([
+    (-3.7, -4.2, 1.45, 1.05, .95), (-1.8, -4.8, .95, .78, .62),
+    (2.0, -4.5, 1.35, .95, .82), (3.8, -3.6, .9, .72, .68),
+    (-4.4, -.8, .85, .72, .62), (4.3, .1, .95, .8, .7),
+]):
+    stone = uv("Foreground reef stone", (x, y, sz * .48), (sx, sy, sz), rock if i % 2 else rock2)
+    stone.rotation_euler[2] = random.uniform(-.35, .35)
+    move_col(stone, "02 Reef")
+
 # colorful branching coral clusters and bulbous coral heads
-for i,(x,y,z) in enumerate([(-6,1,.35),(-3,3,.45),(1,3,.35),(5,2,.4),(7,-1,.3),(-7,-2,.3)]):
+for i,(x,y,z) in enumerate([(-4.5,1,.35),(-2.5,2.8,.45),(0,3,.35),(2.5,2.2,.4),(4.5,-.8,.3),(-4.5,-2,.3)]):
     coral_branch(x,y,z,corals[i%4],i+10)
     o=uv("Brain coral",(x+.55,y-.12,z+.12),(.58,.48,.36),corals[(i+1)%4]); move_col(o,"03 Corals")
 # kelp forest and collectible seagrass groupings
-for i,x in enumerate([-8,-6,-4,4,6,8]):
+for i,x in enumerate([-5,-4,-3,3,4,5]):
     for j in range(3):
         grass(x+j*.35,3+j*.22,.05,greens[(i+j)%3],i*10+j); 
-for i,x in enumerate([-3.1,0,3.1]):
+for i,x in enumerate([-2.5,0,2.5]):
     grass(x,-2.2,.05,greens[i],100+i)
 # anemone tentacles around a central bulb
-uv("Anemone base",(-1.2,-.2,.22),(.72,.58,.3),corals[2])
+uv("Anemone base",(-.8,-.2,.22),(.72,.58,.3),corals[2])
 for i in range(13):
     a=i*math.tau/13
-    p=(-1.2+math.cos(a)*.38,-.2+math.sin(a)*.32,.35)
-    q=(-1.2+math.cos(a)*.62,-.2+math.sin(a)*.5,random.uniform(.75,1.05))
+    p=(-.8+math.cos(a)*.38,-.2+math.sin(a)*.32,.35)
+    q=(-.8+math.cos(a)*.62,-.2+math.sin(a)*.5,random.uniform(.75,1.05))
     cylinder("Anemone tentacle",p,q,.075,corals[i%4],10)
 # clownfish: body, tail, fins and visible eyes
-uv("Clownfish body",(2.0,.0,1.1),(.8,.35,.42),fishmat)
-uv("Clownfish tail",(2.85,.03,1.1),(.28,.08,.38),corals[1])
-for x in (1.55,2.15):
+uv("Clownfish body",(1.6,.0,1.1),(.8,.35,.42),fishmat)
+uv("Clownfish tail",(2.45,.03,1.1),(.28,.08,.38),corals[1])
+for x in (1.2,1.75):
     bpy.ops.mesh.primitive_cube_add(size=1,location=(x,-.31,1.1),scale=(.12,.035,.72))
     stripe=bpy.context.object; stripe.name="Clownfish white band"; stripe.data.materials.append(white); move_col(stripe,"04 Creatures")
-uv("Fish eye",(1.45,-.34,1.22),(.07,.045,.07),white)
+uv("Fish eye",(1.1,-.34,1.22),(.07,.045,.07),white)
 # scattered shells, pearls and bubbles
 for i in range(18):
-    x=random.uniform(-8,8); y=random.uniform(-3,4)
+    x=random.uniform(-5.5,5.5); y=random.uniform(-4,4)
     o=uv("Scattered pearl",(x,y,.08),(random.uniform(.07,.13),)*3,white,20,12); move_col(o,"05 Details")
 for i in range(12):
-    x=random.uniform(-8,8); y=random.uniform(-1,5); z=random.uniform(1,5)
+    x=random.uniform(-5.5,5.5); y=random.uniform(-1,5); z=random.uniform(1,5)
     o=uv("Air bubble",(x,y,z),(.09,.09,.09),white,16,10); move_col(o,"05 Details")
 # Lighting and camera
 world=bpy.data.worlds.new("Clear tropical water"); world.use_nodes=True
@@ -128,9 +138,9 @@ world.node_tree.nodes["Background"].inputs["Strength"].default_value=.55; scene.
 for name,loc,power,size,color in [("Sunlit key",(-6,-8,12),1800,8,(.65,.88,1)),("Warm fill",(8,-1,8),1100,7,(1,.68,.48)),("Reef rim",(0,8,10),1400,6,(.25,.85,1))]:
     bpy.ops.object.light_add(type="AREA",location=loc); l=bpy.context.object; l.name=name; l.data.energy=power; l.data.shape="DISK"; l.data.size=size; l.data.color=color
     l.rotation_euler=(Vector((0,0,0))-l.location).to_track_quat("-Z","Y").to_euler(); move_col(l,"06 Lighting")
-bpy.ops.object.camera_add(location=(10,-18,12)); cam=bpy.context.object
+bpy.ops.object.camera_add(location=(7,-15,10)); cam=bpy.context.object
 cam.name="Coral Cove camera"; cam.rotation_euler=(Vector((0,1,1.1))-cam.location).to_track_quat("-Z","Y").to_euler()
-cam.data.type="ORTHO"; cam.data.ortho_scale=21; scene.camera=cam; move_col(cam,"06 Lighting")
+cam.data.type="ORTHO"; cam.data.ortho_scale=17; scene.camera=cam; move_col(cam,"06 Lighting")
 scene.render.filepath=PREVIEW
 bpy.ops.wm.save_as_mainfile(filepath=BLEND)
 bpy.ops.render.render(write_still=True)
