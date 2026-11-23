@@ -36,8 +36,8 @@ BEADS_PER_ROD = 5
 BEAD_SPACING = 0.38
 BEAD_RADIUS = 0.15
 BEAD_X_SCALE = 0.90
-ROD_LENGTH = 2.70
-ROD_X = 1.35
+ROD_LENGTH = 2.35
+ROD_X = 1.175
 ROW_Z = [-1.04 + i * 0.52 for i in range(ROD_COUNT)]
 BEAD_LEFT = -0.95
 BEAD_RIGHT = 0.95
@@ -213,17 +213,17 @@ def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | N
     # Four substantial rounded rails. No face, ears, wings, stickers or side
     # ornaments: keep the silhouette readable and leave the full width for play.
     parts = [
-        cube("Frame_TopRail", (0.0, 0.0, 1.55), (3.28, 0.38, 0.18), mats["glass"], col, bevel=0.075),
-        cube("Frame_BottomRail", (0.0, 0.0, -1.55), (3.28, 0.38, 0.18), mats["glass"], col, bevel=0.075),
-        cube("Frame_LeftPost", (-1.55, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
-        cube("Frame_RightPost", (1.55, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
+        cube("Frame_TopRail", (0.0, 0.0, 1.55), (2.53, 0.38, 0.18), mats["glass"], col, bevel=0.075),
+        cube("Frame_BottomRail", (0.0, 0.0, -1.55), (2.53, 0.38, 0.18), mats["glass"], col, bevel=0.075),
+        cube("Frame_LeftPost", (-1.175, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
+        cube("Frame_RightPost", (1.175, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
     ]
 
     # A restrained warm-metal inner edge gives the frame a crafted finish
     # without creating another high-contrast border around every bead.
     parts.extend([
-        cube("Frame_TopAccent", (0.0, -0.198, 1.425), (2.92, 0.025, 0.025), mats["gold"], col, bevel=0.01),
-        cube("Frame_BottomAccent", (0.0, -0.198, -1.425), (2.92, 0.025, 0.025), mats["gold"], col, bevel=0.01),
+        cube("Frame_TopAccent", (0.0, -0.198, 1.425), (2.17, 0.025, 0.025), mats["gold"], col, bevel=0.01),
+        cube("Frame_BottomAccent", (0.0, -0.198, -1.425), (2.17, 0.025, 0.025), mats["gold"], col, bevel=0.01),
     ])
 
     root["asset"] = "math-ocean-kecrekan"
