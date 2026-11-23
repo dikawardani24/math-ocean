@@ -7,7 +7,6 @@ import '../core/feedback.dart';
 import '../theme.dart';
 import '../widgets/ui_kit.dart';
 import 'kecrekan_controller.dart';
-import 'kecrekan_math.dart';
 
 /// The playable 3D counting frame.
 ///
@@ -18,7 +17,7 @@ class KecrekanStage extends StatefulWidget {
   const KecrekanStage({
     super.key,
     required this.controller,
-    this.hint = 'Drag the beads, or tap one to slide it',
+    this.hint = 'Tap a bead, or drag gently to move one',
     this.interactive = true,
     this.onInteraction,
     this.showTotal = true,
@@ -40,9 +39,8 @@ class _KecrekanStageState extends State<KecrekanStage> {
   Size _size = Size.zero;
   KecrekanBead? _downBead;
   int? _dragRod;
-  int _dragStartCount = 0;
-  double _dragStartX = 0;
-  double _dragZ = 0;
+  double _dragStartPointerX = 0;
+  bool _dragMovedOneBead = false;
   bool _touched = false;
   bool _started = false;
 
@@ -97,35 +95,29 @@ class _KecrekanStageState extends State<KecrekanStage> {
       return;
     }
     _dragRod = bead.rod;
-    _dragZ = bead.z;
+    _dragMovedOneBead = false;
   }
 
-  /// Anchor the drag where the gesture was actually recognised, so the touch
-  /// slop the finger spent before the pan won does not change the count.
+  /// Capture the starting pointer so a drag can move only one bead.
   void _panStart(DragStartDetails details) {
-    final rod = _dragRod;
-    if (rod == null) return;
-    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
-    if (x == null) {
-      _dragRod = null;
-      return;
-    }
-    _dragStartCount = widget.controller.math.countFor(rod);
-    _dragStartX = x;
+    if (_dragRod == null) return;
+    _dragStartPointerX = details.localPosition.dx;
+    _dragMovedOneBead = false;
   }
 
   void _panUpdate(DragUpdateDetails details) {
     final rod = _dragRod;
-    if (rod == null || !widget.interactive) return;
-    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
-    if (x == null) return;
-    // Anchored to the start of the drag, so reversing retraces the same
-    // counts and no frames are lost.
-    final target = KecrekanMath.dragCount(
-      startCount: _dragStartCount,
-      dx: x - _dragStartX,
-    );
+    if (rod == null || !widget.interactive || _dragMovedOneBead) return;
+    final dx = details.localPosition.dx - _dragStartPointerX;
+    // A drag is intentionally a one-bead action. The old distance-based
+    // mapping changed the row count repeatedly as the finger travelled, so
+    // neighboring beads appeared to follow the grabbed bead. Require a short
+    // intentional horizontal movement, then lock this gesture to one change.
+    const dragThreshold = 22.0;
+    if (dx.abs() < dragThreshold) return;
     final before = widget.controller.math.countFor(rod);
+    final target = (before + (dx < 0 ? 1 : -1)).clamp(0, 10);
+    _dragMovedOneBead = true;
     if (target == before) return;
     widget.controller.setRowCount(rod, target);
     _playForRow(widget.controller.math.countFor(rod));
