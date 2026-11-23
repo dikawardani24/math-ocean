@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../theme.dart';
 import 'models.dart';
 
@@ -219,6 +221,69 @@ const List<Mission> kMissions = [
     emoji: '🙌',
   ),
 ];
+
+/// Creates a fresh challenge instead of asking a child to pick a fixed
+/// answer from a mission list. Kecrekan addition/subtraction stay within ten;
+/// Jarimatika uses both hands for a two-digit number.
+Mission randomChallengeFor(StationKind kind, {math.Random? random}) {
+  final rng = random ?? math.Random();
+  switch (kind) {
+    case StationKind.counting:
+      final target = 1 + rng.nextInt(20);
+      return Mission(
+        id: 'challenge_count_$target',
+        station: kind,
+        title: 'Treasure Count',
+        story: 'A group of ocean treasures is waiting. Count them with the beads.',
+        target: target,
+        voice: 'Look carefully at the treasures. How many can you count?',
+        hint: 'Move the beads one at a time and count the group.',
+        emoji: '🐚',
+      );
+    case StationKind.addition:
+      final a = 1 + rng.nextInt(9);
+      final b = 1 + rng.nextInt(10 - a);
+      return Mission(
+        id: 'challenge_add_${a}_$b',
+        station: kind,
+        title: 'Pearl Gathering',
+        story: 'Some pearls are here. More pearls arrive. How many are together?',
+        target: a + b,
+        a: a,
+        b: b,
+        voice: 'Look at the pearls already here. More arrive. How many altogether?',
+        hint: 'Keep the first group. Join the new arrivals and count them together.',
+        emoji: '🐚',
+      );
+    case StationKind.subtraction:
+      final start = 2 + rng.nextInt(9);
+      final removed = 1 + rng.nextInt(start - 1);
+      return Mission(
+        id: 'challenge_sub_${start}_$removed',
+        station: kind,
+        title: 'Tide Takes Treasures',
+        story: 'Some treasures drift away with the tide. How many are left?',
+        target: start - removed,
+        start: start,
+        b: removed,
+        voice: 'Watch some treasures drift away. How many remain?',
+        hint: 'Move away the treasures that disappeared, then count what remains.',
+        emoji: '🫧',
+      );
+    case StationKind.jarimatika:
+      final target = 10 + rng.nextInt(90);
+      return Mission(
+        id: 'challenge_jar_$target',
+        station: kind,
+        title: 'Finger Number Challenge',
+        story: 'Show this number with both Jarimatika hands.',
+        target: target,
+        voice: 'Show $target with your Jarimatika hands. Left hand is tens, right hand is ones.',
+        hint: 'Left hand shows tens. Right hand shows ones.',
+        emoji: '✋',
+      );
+  }
+}
 
 List<Mission> missionsFor(StationKind kind) =>
     kMissions.where((m) => m.station == kind).toList(growable: false);
