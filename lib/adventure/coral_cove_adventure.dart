@@ -110,25 +110,32 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   }
 
   void _collectSnack(int index) {
+    // Keep the food and the physical counting frame in lockstep: a child
+    // must represent the previous item with one bead before gathering another.
     if (_collectedSnacks.contains(index) || _completed) return;
+    if (_kecrekan.total != _collectedSnacks.length) return;
     setState(() {
       _collectedSnacks.add(index);
     });
     AudioService.instance.sfx('bead_slide');
     Feel.snap();
 
-    if (_collectedSnacks.length == _targetSnacks) {
-      _speak('Wonderful! Now slide $_targetSnacks coral beads on your abacus to feed the turtle!');
-    } else {
-      _speak('Yummy seagrass! Collected ${_collectedSnacks.length} of $_targetSnacks.');
-    }
+    _speak(
+      'You found seagrass ${_collectedSnacks.length}. Move one bead for this one!',
+    );
   }
 
   void _onAbacusChanged() {
     if (_completed) return;
     final total = _kecrekan.total;
-    if (total == _targetSnacks && _collectedSnacks.length == _targetSnacks) {
+    final collected = _collectedSnacks.length;
+
+    if (total == collected && collected == _targetSnacks) {
       _triggerSuccess();
+    } else if (total == collected && collected > 0) {
+      _speak('That is one bead for each seagrass! Find the next piece.');
+    } else if (total > collected) {
+      _speak('One bead for each seagrass. Slide one bead back.');
     }
   }
 
@@ -220,7 +227,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                                   top: 0,
                                   right: 4,
                                   child: Text(
-                                    _clownfishEncountered ? '🐠' : '🐠',
+                                    _clownfishEncountered ? '🐠✨' : '🐠',
                                     style: const TextStyle(fontSize: 42),
                                   ),
                                 ),
