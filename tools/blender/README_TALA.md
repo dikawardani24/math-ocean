@@ -36,7 +36,7 @@ Tala is modeled as a stylized juvenile green sea turtle (*Chelonia mydas*), not 
 - A rounded upper jaw and a distinct lower jaw with a serrated cutting edge. Avoid a long hooked beak, oversized duck bill, or human-style smile.
 - Head-scale boundaries should be visible at normal phone viewing size, but remain soft and low-contrast so Tala still reads as a friendly companion.
 
-The Blender model uses shallow, head-conforming polygon plates for the visible scutes and jaw surfaces. Facial elements are parented to the head so they follow its animation.
+The Blender model uses shallow, head-conforming polygon plates for the visible scutes. The mouth is a compact beak-like opening with a separate lower jaw mounted on an animated hinge; `Eat_Chew` rotates that jaw through repeated bites instead of translating a fixed chin.
 
 Reference reading:
 - [NOAA Fisheries — Green Turtle appearance](https://www.fisheries.noaa.gov/species/green-turtle?page=1)
