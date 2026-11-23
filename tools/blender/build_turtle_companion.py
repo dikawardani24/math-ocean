@@ -257,43 +257,26 @@ muzzle = parent_preserve_world(uv(
     24,
 ), head)
 
-# Small open smile, recessed into the muzzle. A tiny tongue makes the
-# expression legible at phone size without a huge dark oval.
-mouth_y = muzzle_surface_y - .115
+# A compact, clearly readable mouth cavity sits under the rounded upper
+# beak. Avoid the wide human-style smile: sea turtles have a short keratin
+# beak, so the opening is a small horizontal bite rather than a grin.
+mouth_y = muzzle_surface_y - .105
 mouth = parent_preserve_world(uv(
-    "Tala_Soft_Smile_Mouth",
-    (0.0, mouth_y, -.072),
-    (.112, .018, .050),
+    "Tala_Mouth_Cavity",
+    (0.0, mouth_y, -.075),
+    (.145, .025, .060),
     mouth_mat,
-    32,
-    18,
+    36,
+    20,
 ), head)
 tongue = parent_preserve_world(uv(
-    "Tala_Tiny_Tongue",
-    (0.0, mouth_y - .014, -.098),
-    (.048, .009, .018),
+    "Tala_Tongue",
+    (0.0, mouth_y - .019, -.105),
+    (.060, .012, .020),
     cheek,
     24,
     14,
 ), head)
-# Fine smile corners join the opening to the muzzle; they are intentionally
-# subtle so the expression reads as a friendly turtle, not a human grin.
-surface_curve(
-    "Tala_Smile_Corners",
-    [(-.115, -.061), (-.102, -.082), (-.075, -.096)],
-    mouth_mat,
-    .006,
-    .17,
-    head,
-)
-surface_curve(
-    "Tala_Smile_Corners_R",
-    [(.075, -.096), (.102, -.082), (.115, -.061)],
-    mouth_mat,
-    .006,
-    .17,
-    head,
-)
 
 # Two tiny nostrils sit high on the muzzle, clearly separated from the mouth.
 for x in (-.065, .065):
@@ -337,16 +320,22 @@ head.name = "Tala_Head_With_Face"
 head.data.name = "Tala_Head_With_Face_Mesh"
 print("Tala face baked into head mesh:", len(head.data.vertices), "vertices")
 
-# Small lower jaw remains a separate animated piece for the feeding clip.
+# The lower jaw is a distinct rounded piece. A hinge empty lets the jaw
+# rotate open instead of sliding as a rigid bead under the face.
 jaw_surface_y = head_surface_point(0.0, -.135, .022)[1]
-jaw = parent_preserve_world(uv(
+jaw = uv(
     "Tala_Lower_Jaw",
-    (0.0, jaw_surface_y - .015, -.145),
-    (.175, .075, .067),
+    (0.0, jaw_surface_y - .025, -.155),
+    (.195, .095, .075),
     skin,
-    32,
-    18,
-), head)
+    36,
+    22,
+)
+jaw_hinge = bpy.data.objects.new("Tala_Jaw_Hinge", None)
+scene.collection.objects.link(jaw_hinge)
+jaw_hinge.location = (0.0, jaw.location.y + .075, -.105)
+parent_preserve_world(jaw_hinge, head)
+parent_preserve_world(jaw, jaw_hinge)
 
 # Small tail visible behind the shell.
 tail = parent_to(root, uv("Tala_Tail", (0, 1.02, -.02), (.19, .38, .13), skin))
@@ -385,8 +374,8 @@ for name, obj in flippers.items():
 set_action(head, "Idle_Swim", [(1, 0), (13, .035), (25, 0), (37, -.025), (49, 0)], "rotation_euler", 0)
 set_action(head, "Eat_Chew", [(1, 0), (5, .10), (10, -.06), (15, .10), (20, -.04), (25, 0)], "rotation_euler", 0)
 set_action(head, "Happy_Reaction", [(1, 0), (8, -.10), (16, .06), (24, 0), (32, -.03)], "rotation_euler", 0)
-set_action(jaw, "Eat_Chew", [(1, 0), (4, -.026), (8, 0), (12, -.026), (16, 0), (20, -.026), (24, 0), (28, 0)], "location", 2)
-set_action(jaw, "Happy_Reaction", [(1, 0), (8, -.012), (16, 0), (24, -.009), (32, 0)], "location", 2)
+set_action(jaw_hinge, "Eat_Chew", [(1, 0), (5, .24), (10, 0), (15, .24), (20, 0), (25, .24), (30, 0)], "rotation_euler", 0)
+set_action(jaw_hinge, "Happy_Reaction", [(1, 0), (8, .035), (16, 0), (24, .025), (32, 0)], "rotation_euler", 0)
 set_action(tail, "Idle_Swim", [(1, 0), (13, .12), (25, 0), (37, -.12), (49, 0)], "rotation_euler", 2)
 
 # Use NLA tracks as glTF animation clips. All mesh geometry remains shared by the
