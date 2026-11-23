@@ -302,7 +302,13 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       emoji: mission?.emoji ?? '💧',
                       title: mission?.title ?? 'Free play',
                       target: _target,
-                      prompt: mission?.question ?? 'Make $_target',
+                      prompt: mission == null
+                          ? 'Make $_target'
+                          : mission.isAddition
+                          ? 'How many altogether?'
+                          : mission.isSubtraction
+                          ? 'How many are left?'
+                          : mission.question,
                       onHelp: () {
                         showDialog<void>(
                           context: context,
@@ -365,16 +371,16 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                               (mission.isAddition || mission.isSubtraction) &&
                               !_eventRevealed,
                           child: KecrekanStage(
-                          controller: _controller,
-                          showTotal: false,
-                          showResetButton: false,
-                          showHintOverlay: false,
-                          onInteraction: () {
-                            if (_encouragement.isNotEmpty) {
-                              setState(() => _encouragement = '');
-                            }
-                          },
-                        ),
+                            controller: _controller,
+                            showTotal: false,
+                            showResetButton: false,
+                            showHintOverlay: false,
+                            onInteraction: () {
+                              if (_encouragement.isNotEmpty) {
+                                setState(() => _encouragement = '');
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -404,7 +410,8 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                                 label: _solved
                                     ? 'Solved!'
                                     : mission != null &&
-                                          (mission.isAddition || mission.isSubtraction) &&
+                                          (mission.isAddition ||
+                                              mission.isSubtraction) &&
                                           !_eventRevealed
                                     ? 'Watch what happens'
                                     : 'Check my beads',
@@ -418,7 +425,8 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                                         OceanColors.coral,
                                       ],
                                 onTap: mission != null &&
-                                        (mission.isAddition || mission.isSubtraction) &&
+                                        (mission.isAddition ||
+                                            mission.isSubtraction) &&
                                         !_eventRevealed
                                     ? _revealEvent
                                     : _check,
