@@ -106,31 +106,49 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   }
 
   final Set<int> _fedGrass = {};
+  int? _feedingGrassIndex;
+  bool _isEating = false;
   bool _finishingFeed = false;
 
   void _feedOne(int grassIndex) {
+    // Only one piece may enter the turtle's mouth at a time. Keep the
+    // basket item visible until the complete bite animation has finished.
     if (_step != _CoralStep.feeding ||
+        _isEating ||
         _finishingFeed ||
         _fedGrass.contains(grassIndex)) {
       return;
     }
 
-    setState(() => _fedGrass.add(grassIndex));
-    Feel.success();
+    setState(() {
+      _feedingGrassIndex = grassIndex;
+      _isEating = true;
+    });
     AudioService.instance.sfx('bead_slide');
 
-    if (_fedGrass.length == _target) {
-      setState(() => _finishingFeed = true);
-      _say('Munch, munch! My tummy is full. Thank you, friend!');
-      Future<void>.delayed(const Duration(milliseconds: 1100), () {
-        if (mounted) _completeFeeding();
+    Future<void>.delayed(const Duration(milliseconds: 950), () {
+      if (!mounted || _step != _CoralStep.feeding) return;
+
+      setState(() {
+        _fedGrass.add(grassIndex);
+        _feedingGrassIndex = null;
+        _isEating = false;
       });
-    } else {
-      final remaining = _target - _fedGrass.length;
-      _say(remaining == 1
-          ? 'Crunch! That was tasty. One more piece, please!'
-          : 'Crunch, crunch! That was tasty. $remaining more pieces!');
-    }
+      Feel.success();
+
+      if (_fedGrass.length == _target) {
+        setState(() => _finishingFeed = true);
+        _say('Munch, munch! My tummy is full. Thank you, friend!');
+        Future<void>.delayed(const Duration(milliseconds: 900), () {
+          if (mounted) _completeFeeding();
+        });
+      } else {
+        final remaining = _target - _fedGrass.length;
+        _say(remaining == 1
+            ? 'Crunch! That was tasty. One more piece, please!'
+            : 'Crunch, crunch! That was tasty. $remaining more pieces!');
+      }
+    });
   }
 
   void _completeFeeding() {
@@ -324,6 +342,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
           child: DragTarget<int>(
             onWillAccept: (index) =>
                 index != null &&
+                !_isEating &&
                 !_finishingFeed &&
                 !_fedGrass.contains(index),
             onAccept: _feedOne,
@@ -350,7 +369,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       duration: const Duration(milliseconds: 180),
                       child: TurtleCompanion(
                         size: 190,
-                        cheering: _fedGrass.isNotEmpty,
+                        cheering: _fedGrass.isNotEmpty && !_isEating,
+                        eating: _isEating,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -363,9 +383,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       child: Text(
                         _finishingFeed
                             ? 'YUMMY! TUMMY FULL!'
-                            : hovering
-                                ? 'LET GO TO FEED ME!'
-                                : 'DROP THE SEAGRASS HERE',
+                            : _isEating
+                                ? 'NOM NOM NOM...'
+                                : hovering
+                                    ? 'LET GO TO FEED ME!'
+                                    : 'DROP THE SEAGRASS HERE',
                         style: const TextStyle(
                           color: OceanColors.ink,
                           fontWeight: FontWeight.w900,
@@ -429,7 +451,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     if (!_fedGrass.contains(i))
                       Draggable<int>(
                         data: i,
-                        maxSimultaneousDrags: _finishingFeed ? 0 : 1,
+                        maxSimultaneousDrags: (_isEating || _finishingFeed) ? 0 : 1,
                         feedback: Material(
                           color: Colors.transparent,
                           child: _SeagrassToken(size: 62, lifted: true),
@@ -438,7 +460,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                           opacity: .2,
                           child: _SeagrassToken(size: 54),
                         ),
-                        child: _SeagrassToken(size: 54),
+                        child: _SeagrassToken(
+                          size: 54,
+                          lifted: _feedingGrassIndex == i,
+                        ),
                       )
                     else
                       _SeagrassToken(size: 54, eaten: true),
@@ -446,7 +471,9 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
               ),
               const SizedBox(height: 6),
               const Text(
-                'Drag one piece at a time to the turtle',
+                _isEating
+                    ? 'Wait for the turtle to finish chewing!'
+                    : 'Drag one piece at a time to the turtle',
                 style: TextStyle(
                   color: OceanColors.inkSoft,
                   fontWeight: FontWeight.w700,
