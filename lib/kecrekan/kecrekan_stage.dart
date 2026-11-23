@@ -82,46 +82,37 @@ class _KecrekanStageState extends State<KecrekanStage> {
     }
   }
 
-  /// Grab the bead under the initial pointer-down position.
-  ///
-  /// Picking uses projected bead centres with a forgiving radius, so the child
-  /// does not have to hit the mesh. The row is locked here and every later
-  /// update stays on it.
+  /// Grab the bead under the initial pointer-down position and keep the drag
+  /// constrained to that rod.
   void _panDown(DragDownDetails details) {
     if (!widget.interactive) return;
     final bead = widget.controller.beadAt(details.localPosition, _size);
     _downBead = bead;
-    if (bead == null) {
-      _dragRod = null;
-      return;
-    }
-    _dragRod = bead.rod;
-    _dragMovedOneBead = false;
+    _dragRod = bead?.rod;
+    _dragStartWorldX = null;
   }
 
-  /// Capture the starting pointer so a drag can move only one bead.
+  /// Anchor the drag in world-space so finger travel moves beads proportionally.
+  /// Long drags can move multiple beads; reversing retraces the same positions.
   void _panStart(DragStartDetails details) {
-    if (_dragRod == null) return;
-    _dragStartPointerX = details.localPosition.dx;
-    _dragMovedOneBead = false;
+    final rod = _dragRod;
+    if (rod == null) return;
+    _dragStartWorldX = widget.controller.planeX(details.localPosition, _size);
+    _dragStartCount = widget.controller.math.countFor(rod);
   }
 
   void _panUpdate(DragUpdateDetails details) {
     final rod = _dragRod;
-    if (rod == null || !widget.interactive || _dragMovedOneBead) return;
-    final dx = details.localPosition.dx - _dragStartPointerX;
-    // A drag is intentionally a one-bead action. The old distance-based
-    // mapping changed the row count repeatedly as the finger travelled, so
-    // neighboring beads appeared to follow the grabbed bead. Require a short
-    // intentional horizontal movement, then lock this gesture to one change.
-    const dragThreshold = 22.0;
-    if (dx.abs() < dragThreshold) return;
+    final startX = _dragStartWorldX;
+    if (rod == null || startX == null || !widget.interactive) return;
+    final worldX = widget.controller.planeX(details.localPosition, _size);
+    if (worldX == null) return;
+    final dx = worldX - startX;
+    final target = KecrekanMath.dragCount(startCount: _dragStartCount, dx: dx);
     final before = widget.controller.math.countFor(rod);
-    final target = (before + (dx < 0 ? 1 : -1)).clamp(0, KecrekanMath.beadsPerRod);
-    _dragMovedOneBead = true;
     if (target == before) return;
     widget.controller.setRowCount(rod, target);
-    _playForRow(widget.controller.math.countFor(rod));
+    _playForRow(target);
     Feel.snap();
     _notifyTouched();
   }
