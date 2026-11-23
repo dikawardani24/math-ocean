@@ -31,7 +31,7 @@ scene.view_settings.view_transform = "AgX"
 scene.render.film_transparent = False
 scene.render.filepath = PREVIEW
 scene.frame_start = 1
-scene.frame_end = 48
+scene.frame_end = 49
 
 def material(name, color, roughness=0.42, metallic=0.0):
     m = bpy.data.materials.new(name)
@@ -214,7 +214,6 @@ bpy.ops.export_scene.gltf(
     export_apply=True,
     export_animations=True,
     export_nla_strips=True,
-    export_nla_strips_merged_animation_name="Tala",
     export_force_sampling=True,
     export_frame_range=True,
 )
