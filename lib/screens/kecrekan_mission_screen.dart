@@ -53,7 +53,13 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   void initState() {
     super.initState();
     _target = _mission?.target ?? _randomTarget();
-    _controller = KecrekanController(initialCount: _mission?.startValue ?? 0);
+    _controller = KecrekanController(
+      initialCount: _mission?.startValue ?? 0,
+      activeRowCount: _rowsForChallenge(
+        _mission?.startValue ?? 0,
+        _target,
+      ),
+    );
     _shake = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 480),
@@ -62,6 +68,13 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 
   int _randomTarget() => 1 + math.Random().nextInt(10);
+
+  /// Rows are based on the largest number visible in the task, not a fixed
+  /// board size. Subtraction needs enough room for its starting value.
+  int _rowsForChallenge(int start, int target) {
+    final capacity = math.max(start, target).clamp(1, 25);
+    return ((capacity + 4) ~/ 5).clamp(1, 5);
+  }
 
   void _speak() {
     if (!mounted) return;
@@ -196,6 +209,9 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
       _usedHint = false;
       _encouragement = '';
       if (_isPractice) _target = _randomTarget();
+      _controller.setActiveRowCount(
+        _rowsForChallenge(_mission?.startValue ?? 0, _target),
+      );
       _controller.resetTo(_mission?.startValue ?? 0);
     });
     _speak();
