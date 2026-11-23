@@ -325,7 +325,7 @@ print("Tala face baked into head mesh:", len(head.data.vertices), "vertices")
 jaw_surface_y = head_surface_point(0.0, -.135, .022)[1]
 jaw = uv(
     "Tala_Lower_Jaw",
-    (0.0, jaw_surface_y - .025, -.155),
+    (0.0, mouth_y - .015, -.155),
     (.195, .095, .075),
     skin,
     36,
