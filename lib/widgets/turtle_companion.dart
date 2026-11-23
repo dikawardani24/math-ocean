@@ -234,10 +234,11 @@ class _TurtlePainter extends CustomPainter {
         ..color = _outline,
     );
 
+    // Oversized, round, chubby baby turtle head.
     final headRect = Rect.fromCenter(
-      center: const Offset(154, 73),
-      width: 60,
-      height: 55,
+      center: const Offset(156, 70),
+      width: 72,
+      height: 64,
     );
     canvas.drawOval(
       headRect,
@@ -255,48 +256,49 @@ class _TurtlePainter extends CustomPainter {
         ..color = _outline,
     );
 
-    // Cheeks.
-    final blush = Paint()..color = _coral.withValues(alpha: 0.45);
-    canvas.drawCircle(const Offset(136, 84), 6.5, blush);
-    canvas.drawCircle(const Offset(176, 82), 6.5, blush);
+    // Soft glowing rosy cheeks.
+    final blush = Paint()..color = _coral.withValues(alpha: 0.65);
+    canvas.drawOval(Rect.fromCenter(center: const Offset(132, 86), width: 18, height: 12), blush);
+    canvas.drawOval(Rect.fromCenter(center: const Offset(180, 84), width: 18, height: 12), blush);
 
-    _eye(canvas, const Offset(144, 64));
-    _eye(canvas, const Offset(168, 63));
+    // Big glossy anime eyes.
+    _eye(canvas, const Offset(142, 60));
+    _eye(canvas, const Offset(170, 59));
 
-    // The mouth opens and closes in a visible bite cycle while eating.
+    // Sweet, smiling beak.
     if (eating && math.sin(t * math.pi * 2 * 5) > 0.15) {
       canvas.drawOval(
-        Rect.fromCenter(center: const Offset(158, 86), width: 13, height: 11),
+        Rect.fromCenter(center: const Offset(158, 86), width: 16, height: 14),
         Paint()..color = const Color(0xFF174A43),
       );
       canvas.drawArc(
-        Rect.fromCenter(center: const Offset(158, 82), width: 13, height: 8),
+        Rect.fromCenter(center: const Offset(158, 82), width: 16, height: 10),
         0,
         math.pi,
         false,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
+          ..strokeWidth = 2.5
           ..color = _outline,
       );
     } else {
       canvas.drawArc(
-        Rect.fromCenter(center: const Offset(157, 84), width: 18, height: 13),
-        0.18,
-        math.pi - 0.36,
+        Rect.fromCenter(center: const Offset(157, 83), width: 22, height: 16),
+        0.15,
+        math.pi - 0.30,
         false,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
+          ..strokeWidth = 3.5
           ..strokeCap = StrokeCap.round
           ..color = _outline,
       );
     }
 
     // Tiny nostril dots.
-    final dot = Paint()..color = _outline.withValues(alpha: 0.5);
-    canvas.drawCircle(const Offset(163, 77), 1.2, dot);
-    canvas.drawCircle(const Offset(169, 77), 1.2, dot);
+    final dot = Paint()..color = _outline.withValues(alpha: 0.6);
+    canvas.drawCircle(const Offset(163, 75), 1.5, dot);
+    canvas.drawCircle(const Offset(170, 75), 1.5, dot);
   }
 
   void _biteOfSeagrass(Canvas canvas) {
@@ -320,42 +322,47 @@ class _TurtlePainter extends CustomPainter {
   void _eye(Canvas canvas, Offset centre) {
     if (blink > 0.7) {
       canvas.drawLine(
-        centre + const Offset(-7, 0),
-        centre + const Offset(7, 0),
+        centre + const Offset(-9, 0),
+        centre + const Offset(9, 0),
         Paint()
-          ..strokeWidth = 3
+          ..strokeWidth = 3.5
           ..strokeCap = StrokeCap.round
           ..color = _outline,
       );
       return;
     }
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: centre,
-        width: 17,
-        height: 19 * (1 - blink * 0.85),
-      ),
-      Paint()..color = Colors.white,
+    // Big white eye.
+    final eyeRect = Rect.fromCenter(
+      center: centre,
+      width: 25,
+      height: 27 * (1 - blink * 0.85),
     );
+    canvas.drawOval(eyeRect, Paint()..color = Colors.white);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: centre + const Offset(0, 1),
-        width: 17,
-        height: 19 * (1 - blink * 0.85),
-      ),
+      eyeRect,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
+        ..strokeWidth = 2.5
         ..color = _outline,
     );
+
+    // Deep glossy teal iris.
+    final irisCenter = centre + const Offset(1, 1.5);
+    final irisR = 8.5 * (1 - blink * 0.7);
+    canvas.drawCircle(irisCenter, irisR, Paint()..color = const Color(0xFF0C5256));
+
+    // Dark pupil.
+    canvas.drawCircle(irisCenter, irisR * 0.65, Paint()..color = _outline);
+
+    // Double sparkling catchlights (kawaii style).
     canvas.drawCircle(
-      centre + const Offset(1.5, 1.5),
-      5.6 * (1 - blink * 0.7),
-      Paint()..color = _outline,
+      irisCenter + const Offset(-3, -3),
+      2.8 * (1 - blink * 0.6),
+      Paint()..color = Colors.white,
     );
     canvas.drawCircle(
-      centre + const Offset(-1, -1.5),
-      2.1 * (1 - blink * 0.6),
+      irisCenter + const Offset(2.5, 2.5),
+      1.4 * (1 - blink * 0.6),
       Paint()..color = Colors.white,
     );
   }
