@@ -107,91 +107,88 @@ class StationScreen extends StatelessWidget {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
                     sliver: SliverToBoxAdapter(
-                      child: Row(
-                        children: [
-                          Text(
-                            isJarima ? 'Finger challenges' : 'Missions',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: OceanColors.foam,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const Spacer(),
-                          if (!isJarima)
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => KecrekanMissionScreen(
-                                      practice: true,
-                                      practiceKind: kind,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.explore_rounded, size: 18),
-                              label: const Text('Free play'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: OceanColors.aqua,
-                              ),
-                            ),
-                        ],
+                      child: Text(
+                        'Choose how to explore',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: OceanColors.foam,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                    sliver: SliverList.separated(
-                      itemCount: missions.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final mission = missions[index];
-                        final unlocked = isJarima
-                            ? progress.jarimatikaChallengeUnlocked &&
-                                  progress.isMissionUnlocked(mission)
-                            : progress.isMissionUnlocked(mission);
-                        return _MissionRow(
-                          index: index,
-                          mission: mission,
-                          stars: progress.starsFor(mission.id),
-                          unlocked: unlocked,
-                          onTap: unlocked
-                              ? () => _openMission(context, mission)
-                              : () => showOceanSnack(
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          _ModeCard(
+                            icon: Icons.menu_book_rounded,
+                            title: 'Learn',
+                            description: isJarima
+                                ? 'Discover how the fingers represent numbers.'
+                                : kind == StationKind.counting
+                                ? 'Learn to count treasures one by one.'
+                                : kind == StationKind.addition
+                                ? 'See how two groups join together.'
+                                : 'See what happens when a group gets smaller.',
+                            color: OceanColors.aqua,
+                            onTap: () {
+                              if (isJarima) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const JarimatikaScreen(practice: true),
+                                  ),
+                                );
+                              } else {
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    backgroundColor: OceanColors.shell,
+                                    title: Text('${kind.stationName} · Learn'),
+                                    content: Text(
+                                      kind == StationKind.counting
+                                          ? 'Move one bead for each treasure you see. Count slowly and notice that every bead stands for one object.'
+                                          : kind == StationKind.addition
+                                          ? 'Start with the first group already counted. When more treasures arrive, join the groups and count how many there are altogether.'
+                                          : 'Start with the whole group. When some treasures disappear, move those beads back and count how many remain.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialogContext),
+                                        child: const Text('Let’s try'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _ModeCard(
+                            icon: Icons.waves_rounded,
+                            title: 'Challenge',
+                            description: isJarima
+                                ? 'Get a fresh random number and show it with both hands.'
+                                : 'Get a fresh task each time. No choosing the answer.',
+                            color: OceanColors.sunny,
+                            locked: isJarima && !progress.jarimatikaChallengeUnlocked,
+                            onTap: () {
+                              if (isJarima && !progress.jarimatikaChallengeUnlocked) {
+                                showOceanSnack(
                                   context,
-                                  isJarima
-                                      ? 'Practice on the hands to unlock this '
-                                            'challenge. First-try answers '
-                                            'build mastery.'
-                                      : 'Finish the mission above first.',
-                                  icon: isJarima
-                                      ? Icons.back_hand_rounded
-                                      : Icons.lock_rounded,
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (!isJarima)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                      sliver: SliverToBoxAdapter(
-                        child: _FreePlayCard(
-                          kind: kind,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => KecrekanMissionScreen(
-                                  practice: true,
-                                  practiceKind: kind,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                  'Explore Learn first and build your finger skills to unlock challenges.',
+                                  icon: Icons.lock_rounded,
+                                );
+                                return;
+                              }
+                              final challenge = randomChallengeFor(kind);
+                              _openMission(context, challenge);
+                            },
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                   const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
                 ],
               ),
