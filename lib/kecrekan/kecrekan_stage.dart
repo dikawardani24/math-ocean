@@ -40,8 +40,8 @@ class _KecrekanStageState extends State<KecrekanStage> {
   Size _size = Size.zero;
   KecrekanBead? _downBead;
   int? _dragRod;
-  double _dragStartPointerX = 0;
-  bool _dragMovedOneBead = false;
+  double? _dragStartWorldX;
+  int _dragStartCount = 0;
   bool _touched = false;
   bool _started = false;
 
