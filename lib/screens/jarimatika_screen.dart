@@ -147,7 +147,10 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   }
 
   void _check() {
-    if (_solved) return;
+    if (_solved) {
+      if (_isLearning) Navigator.of(context).maybePop();
+      return;
+    }
     if (_total == _target) {
       if (_isLearning) {
         _advanceLesson();
