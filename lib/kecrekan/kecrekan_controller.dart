@@ -21,7 +21,7 @@ class KecrekanBead {
   final Node node;
   final int rod;
   final int index;
-  final double y;
+  double y;
   final double z;
   double x;
   double velocity = 0;
