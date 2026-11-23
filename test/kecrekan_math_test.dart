@@ -47,7 +47,6 @@ void main() {
       // One empty slot between the groups; the bead that crosses it moves by
       // one spacing, not by the old two-and-a-bit spacing hole.
       expect(gap, closeTo(2 * KecrekanMath.spacing, 0.0001));
-      expect(gap, closeTo(2 * KecrekanMath.spacing, 0.0001));
       expect(positions.first, KecrekanMath.rightX);
       expect(positions.last, KecrekanMath.leftX);
     });
@@ -95,6 +94,16 @@ void main() {
       expect(KecrekanMath.nextUncountedIndex(5), -1);
       expect(KecrekanMath.edgeCountedIndex(0), -1);
       expect(KecrekanMath.edgeCountedIndex(5), 0);
+    });
+  });
+
+  group('challenge rows', () {
+    test('uses only enough rows for the visible challenge values', () {
+      expect(KecrekanMath.rowsForChallenge(start: 0, target: 4), 1);
+      expect(KecrekanMath.rowsForChallenge(start: 0, target: 7), 2);
+      expect(KecrekanMath.rowsForChallenge(start: 8, target: 5), 2);
+      expect(KecrekanMath.rowsForChallenge(start: 0, target: 25), 5);
+      expect(KecrekanMath.rowsForChallenge(start: 0, target: 0), 1);
     });
   });
 
