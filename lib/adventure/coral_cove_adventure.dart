@@ -28,6 +28,7 @@ class CoralCoveAdventure extends StatefulWidget {
 class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     with TickerProviderStateMixin {
   static const _adventureId = 'coral_cove';
+  static int? _lastTargetSnacks;
 
   late final OceanCreature _turtle;
   late final AnimationController _swim;
@@ -47,7 +48,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     super.initState();
     _turtle = creatureById('green_turtle')!;
     final rng = math.Random();
-    _targetSnacks = 3 + rng.nextInt(3); // 3 to 5
+    // Keep each visit feeling fresh; the next reef task cannot repeat the
+    // previous target during this app session.
+    final choices = [2, 3, 4, 5]..remove(_lastTargetSnacks);
+    _targetSnacks = choices[rng.nextInt(choices.length)];
+    _lastTargetSnacks = _targetSnacks;
     _kecrekan = KecrekanController(
       initialCount: 0,
       activeRowCount: KecrekanMath.rowsForChallenge(start: 0, target: _targetSnacks),
