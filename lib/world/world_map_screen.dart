@@ -3,13 +3,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../adventure/coral_cove_adventure.dart';
+import '../adventure/kelp_forest_adventure.dart';
+import '../adventure/shell_shore_adventure.dart';
 import '../core/audio_service.dart';
 import '../core/feedback.dart';
 import '../core/progress.dart';
 import '../discovery/journal_screen.dart';
+import '../screens/jarimatika_screen.dart';
 import '../screens/rewards_screen.dart';
 import '../screens/settings_sheet.dart';
-import '../screens/station_screen.dart';
 import '../core/models.dart';
 import '../theme.dart';
 import '../widgets/turtle_companion.dart';
@@ -83,10 +85,35 @@ class _WorldMapScreenState extends State<WorldMapScreen>
     AudioService.instance.speak(tease);
   }
 
-  Future<void> _openLegacyStation(StationKind kind) async {
+  Future<void> _openShellShore() async {
     AudioService.instance.sfx('whoosh');
+    Feel.tap();
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const ShellShoreAdventure()),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openKelpForest() async {
+    AudioService.instance.sfx('whoosh');
+    Feel.tap();
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const KelpForestAdventure()),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openFingerReef() async {
+    AudioService.instance.sfx('whoosh');
+    Feel.tap();
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => StationScreen(kind: kind)),
+      MaterialPageRoute(builder: (_) => const JarimatikaScreen(practice: true)),
     );
   }
 
@@ -110,6 +137,7 @@ class _WorldMapScreenState extends State<WorldMapScreen>
     final coralDone = progress.hasCompletedAdventure('coral_cove');
     final shellOpen =
         progress.isLocationUnlocked('shell_shore') || coralDone;
+    final kelpOpen = progress.hasCompletedAdventure('shell_shore');
 
     return Scaffold(
       body: Stack(
@@ -205,9 +233,7 @@ class _WorldMapScreenState extends State<WorldMapScreen>
                                   pulse: t,
                                   locked: !shellOpen,
                                   onTap: shellOpen
-                                      ? () => _openLegacyStation(
-                                            StationKind.addition,
-                                          )
+                                      ? _openShellShore
                                       : () => _openLocked(
                                             'Shell Shore',
                                             'Finish Coral Cove to open Shell Shore!',
@@ -224,11 +250,13 @@ class _WorldMapScreenState extends State<WorldMapScreen>
                                   emoji: '🌿',
                                   color: OceanColors.lilac,
                                   pulse: t,
-                                  locked: true,
-                                  onTap: () => _openLocked(
-                                    'Kelp Forest',
-                                    'The kelp is still too thick. Explore more first!',
-                                  ),
+                                  locked: !kelpOpen,
+                                  onTap: kelpOpen
+                                      ? _openKelpForest
+                                      : () => _openLocked(
+                                            'Kelp Forest',
+                                            'Finish Shell Shore to open Kelp Forest!',
+                                          ),
                                 ),
                               ),
 
@@ -242,9 +270,12 @@ class _WorldMapScreenState extends State<WorldMapScreen>
                                   color: OceanColors.sunny,
                                   pulse: t,
                                   locked: !progress.jarimatikaChallengeUnlocked,
-                                  onTap: () => _openLegacyStation(
-                                    StationKind.jarimatika,
-                                  ),
+                                  onTap: progress.jarimatikaChallengeUnlocked
+                                      ? _openFingerReef
+                                      : () => _openLocked(
+                                            'Finger Reef',
+                                            'Complete more adventures to unlock Finger Reef!',
+                                          ),
                                 ),
                               ),
 

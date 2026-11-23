@@ -38,6 +38,36 @@ const List<OceanCreature> kCreatures = [
       'This is his home. The soft tentacles keep him safe.',
     ],
   ),
+  OceanCreature(
+    id: 'hermit_crab',
+    name: 'Hermit Crab',
+    emoji: '🦀',
+    habitat: 'Sandy seabeds and tide pools',
+    habitatId: 'shell_shore',
+    diet: 'Scavenges tiny bits of food and algae',
+    movement: 'Crawls sideways across the sandy seabed',
+    funFact: 'They find empty shells from other sea animals to protect their soft bellies',
+    appearance: 'Red-orange body with claw pincers',
+    encounterLines: [
+      'Hello! I am looking for a new shell home.',
+      'I crawl sideways on the sandy floor.',
+    ],
+  ),
+  OceanCreature(
+    id: 'seahorse',
+    name: 'Seahorse',
+    emoji: '🐴',
+    habitat: 'Giant kelp forests and seagrass beds',
+    habitatId: 'kelp_forest',
+    diet: 'Tiny drifting shrimp and plankton',
+    movement: 'Swims upright and holds onto kelp with its tail',
+    funFact: 'They wrap their tails around kelp stalks so ocean currents do not sweep them away',
+    appearance: 'Horse-like head and upright swimming body',
+    encounterLines: [
+      'Hello from the kelp forest!',
+      'I wrap my tail around the kelp so I stay safe.',
+    ],
+  ),
 ];
 
 OceanCreature? creatureById(String id) {
