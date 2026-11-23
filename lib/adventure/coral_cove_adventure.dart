@@ -126,7 +126,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     });
     AudioService.instance.sfx('bead_slide');
 
-    Future<void>.delayed(const Duration(milliseconds: 950), () {
+    Future<void>.delayed(const Duration(milliseconds: 1200), () {
       if (!mounted || _step != _CoralStep.feeding) return;
 
       setState(() {
