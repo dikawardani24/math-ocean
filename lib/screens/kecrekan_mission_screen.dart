@@ -42,6 +42,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   int _attempts = 0;
   bool _usedHint = false;
   bool _solved = false;
+  bool _eventRevealed = false;
   bool _celebrate = false;
   String _encouragement = '';
   int _reward = 0;
@@ -72,8 +73,14 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
 
   void _speak() {
     if (!mounted) return;
-    final line = _mission?.voice ??
-        'Can you make $_target? Explore the beads and find the number.';
+    final mission = _mission;
+    final line = mission == null
+        ? 'Can you make $_target? Explore the beads and find the number.'
+        : mission.isAddition
+        ? 'Look at the pearls already here. How many can you count?'
+        : mission.isSubtraction
+        ? 'Look at all the bubbles before anything happens. How many can you count?'
+        : mission.voice;
     AudioService.instance.speak(line);
   }
 
@@ -84,6 +91,16 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     _controller.dispose();
     AudioService.instance.stopSpeaking();
     super.dispose();
+  }
+
+  void _revealEvent() {
+    if (_eventRevealed) return;
+    setState(() => _eventRevealed = true);
+    AudioService.instance.sfx('bubble');
+    final line = _mission?.isAddition == true
+        ? 'More pearls have arrived! Count the new group. Bring the two groups together. How many pearls are there altogether?'
+        : 'Some bubbles have popped and disappeared. Look at the bubbles still floating. How many are left?';
+    AudioService.instance.speak(line);
   }
 
   void _hint() {
@@ -202,6 +219,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     setState(() {
       _solved = false;
       _celebrate = false;
+      _eventRevealed = false;
       _attempts = 0;
       _usedHint = false;
       _encouragement = '';
@@ -213,6 +231,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
         ),
       );
       _controller.resetTo(_mission?.startValue ?? 0);
+      _eventRevealed = false;
     });
     _speak();
   }
@@ -324,7 +343,11 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                     if (mission != null &&
                         (mission.isAddition || mission.isSubtraction)) ...[
                       const SizedBox(height: 5),
-                      _OperationStoryStrip(mission: mission),
+                      _OperationStoryStrip(
+                        mission: mission,
+                        revealed: _eventRevealed,
+                        onReveal: _revealEvent,
+                      ),
                       const SizedBox(height: 5),
                     ],
                     Expanded(
@@ -338,7 +361,11 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             child: child,
                           );
                         },
-                        child: KecrekanStage(
+                        child: IgnorePointer(
+                          ignoring: mission != null &&
+                              (mission.isAddition || mission.isSubtraction) &&
+                              !_eventRevealed,
+                          child: KecrekanStage(
                           controller: _controller,
                           showTotal: false,
                           showResetButton: false,
@@ -348,6 +375,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                               setState(() => _encouragement = '');
                             }
                           },
+                        ),
                         ),
                       ),
                     ),
@@ -409,6 +437,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             AudioService.instance.sfx('reset');
                             _controller.resetTo(_mission?.startValue ?? 0);
                             setState(() {
+                              _eventRevealed = false;
                               _solved = false;
                               _celebrate = false;
                               _attempts = 0;
@@ -520,16 +549,22 @@ class _MissionObjective extends StatelessWidget {
 /// Kecrekan starts with the first group already built; the second group is
 /// the new arrival or the group that disappears in the story.
 class _OperationStoryStrip extends StatelessWidget {
-  const _OperationStoryStrip({required this.mission});
+  const _OperationStoryStrip({
+    required this.mission,
+    required this.revealed,
+    required this.onReveal,
+  });
 
   final Mission mission;
+  final bool revealed;
+  final VoidCallback onReveal;
 
   @override
   Widget build(BuildContext context) {
     final firstCount = mission.isAddition ? (mission.a ?? 0) : (mission.start ?? 0);
     final secondCount = mission.b ?? 0;
     final firstLabel = mission.isAddition ? 'Already here' : 'At the start';
-    final secondLabel = mission.isAddition ? 'Joining' : 'Goes away';
+    final secondLabel = mission.isAddition ? 'New arrivals' : 'Popped';
 
     return Container(
       width: double.infinity,
@@ -561,9 +596,9 @@ class _OperationStoryStrip extends StatelessWidget {
           ),
           Expanded(
             child: _StoryGroup(
-              count: secondCount,
+              count: revealed ? secondCount : 0,
               emoji: mission.emoji,
-              label: secondLabel,
+              label: revealed ? secondLabel : 'Not yet',
               faded: mission.isSubtraction,
             ),
           ),
@@ -578,6 +613,13 @@ class _OperationStoryStrip extends StatelessWidget {
               ),
             ),
           ),
+          if (!revealed)
+            IconButton(
+              onPressed: onReveal,
+              tooltip: mission.isAddition ? 'See what arrives' : 'Watch what happens',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.play_circle_fill_rounded, color: OceanColors.sunny),
+            ),
         ],
       ),
     );
