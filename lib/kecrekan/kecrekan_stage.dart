@@ -18,7 +18,7 @@ class KecrekanStage extends StatefulWidget {
   const KecrekanStage({
     super.key,
     required this.controller,
-    this.hint = 'Tap a bead, or drag gently to move one',
+    this.hint = 'Tap a bead or drag to move several',
     this.interactive = true,
     this.onInteraction,
     this.showTotal = true,
