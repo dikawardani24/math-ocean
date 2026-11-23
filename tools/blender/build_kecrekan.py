@@ -489,9 +489,8 @@ def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bp
     move_to_collection(rod, col)
 
     coral_mesh = make_bead_mesh("POC_BeadMesh_Coral", mats["bead_0_deep"], mats["gold"])
-    gold_mesh = make_bead_mesh("POC_BeadMesh_Gold", mats["bead_0_light"], mats["gold"])
     for obj in list(bpy.context.scene.objects):
-        if obj.name in {"POC_BeadMesh_Coral", "POC_BeadMesh_Gold"}:
+        if obj.name == "POC_BeadMesh_Coral":
             bpy.data.objects.remove(obj, do_unlink=True)
     for i in range(BEADS_PER_ROD):
         x = BEAD_RIGHT - i * BEAD_SPACING
