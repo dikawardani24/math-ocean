@@ -59,7 +59,7 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Two Pearl Piles',
     story:
-        'Two pearls rest beside a coral cup. Three more pearls arrive from the tide. '
+        'Pearls rest beside a coral cup. More pearls arrive with the tide. '
         'How many pearls are together now?',
     target: 5,
     a: 2,
@@ -73,7 +73,7 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Starfish Pair',
     story:
-        'Four starfish rest on one rock. Three starfish swim over to join them. '
+        'Some starfish rest on one rock. Other starfish swim over to join them. '
         'How many starfish are together?',
     target: 7,
     a: 4,
@@ -87,7 +87,7 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'High Five',
     story:
-        'Five tiny turtles are having a rest. Five friends arrive for the party. '
+        'A group of tiny turtles is having a rest. More friends arrive for the party. '
         'How many turtles are at the party now?',
     target: 10,
     a: 5,
@@ -101,7 +101,7 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Coral Climb',
     story:
-        'Six coral flowers are blooming on a branch. Two new flowers open nearby. '
+        'Coral flowers are blooming on a branch. New flowers open nearby. '
         'How many flowers can you see altogether?',
     target: 8,
     a: 6,
@@ -117,7 +117,7 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Bubble Pop',
     story:
-        'Eight bubbles float above the reef. Three bubbles pop and disappear. '
+        'Bubbles float above the reef. Some bubbles pop and disappear. '
         'How many bubbles are still floating?',
     target: 5,
     start: 8,
@@ -131,7 +131,7 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Shells Away',
     story:
-        'Ten shells rest on the shore. A wave sweeps four shells back into the sea. '
+        'Shells rest on the shore. A wave sweeps some back into the sea. '
         'How many shells remain on the sand?',
     target: 6,
     start: 10,
@@ -145,7 +145,7 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Kelp Snack',
     story:
-        'Seven little kelp leaves are growing. A fish nibbles two leaves. '
+        'Kelp leaves are growing. A fish nibbles some leaves. '
         'How many leaves are still growing?',
     target: 5,
     start: 7,
@@ -159,7 +159,7 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Turtle Trek',
     story:
-        'Nine baby turtles swim together. Five dive down to explore the deep sea. '
+        'Baby turtles swim together. Some dive down to explore the deep sea. '
         'How many turtles keep swimming near the surface?',
     target: 4,
     start: 9,
