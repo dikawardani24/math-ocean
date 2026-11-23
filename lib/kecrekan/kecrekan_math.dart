@@ -13,7 +13,8 @@ class KecrekanMath {
   // hole and a natural drag over-counted by three or four beads.
   static const double leftX = -0.675;
   static const double rightX = 0.675;
-  static const double spacing = 0.27;
+  static const double beadDiameter = 0.27;
+  static const double spacing = beadDiameter;
 
   /// Minimum visible rows needed to represent a challenge's starting and
   /// ending values. A subtraction task must fit its starting value even when
