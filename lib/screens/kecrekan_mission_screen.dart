@@ -262,16 +262,16 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     _PromptCard(
                       emoji: mission?.emoji ?? '💧',
                       story: story,
                       target: _target,
                       equation: mission?.question,
                       onSpeak: _speak,
-                      compact: MediaQuery.sizeOf(context).height < 700,
+                      compact: true,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     Expanded(
                       child: AnimatedBuilder(
                         animation: _shake,
@@ -396,24 +396,26 @@ class _PromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassPanel(
-      padding: const EdgeInsets.fromLTRB(14, 11, 12, 12),
-      radius: 22,
+      // Keep the mission instructions readable without letting this card
+      // compete with the physical counting toy for vertical space.
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      radius: 18,
       color: OceanColors.shell.withValues(alpha: 0.96),
       borderColor: Colors.white.withValues(alpha: 0.7),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 38,
+            height: 38,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: OceanColors.mint.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            child: Text(emoji, style: const TextStyle(fontSize: 21)),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 9),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,7 +425,7 @@ class _PromptCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         story,
-                        maxLines: compact ? 2 : 3,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: OceanColors.ink,
@@ -447,18 +449,20 @@ class _PromptCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 5,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                const SizedBox(height: 3),
+                Row(
                   children: [
-                    if (equation != null)
-                      _Chip(text: equation!, color: OceanColors.coral),
+                    if (equation != null) ...[
+                      Flexible(
+                        child: _Chip(
+                          text: equation!,
+                          color: OceanColors.coral,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
                     _Chip(
-                      text: equation == null
-                          ? 'Make $target'
-                          : 'Find the total',
+                      text: equation == null ? 'Make $target' : 'Find total',
                       color: OceanColors.teal,
                       foreground: Colors.white,
                     ),
@@ -486,7 +490,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
@@ -497,7 +501,7 @@ class _Chip extends StatelessWidget {
         style: TextStyle(
           color: foreground == Colors.white ? color : OceanColors.ink,
           fontWeight: FontWeight.w800,
-          fontSize: 13,
+          fontSize: 11.5,
           fontFamily: 'Baloo2',
         ),
       ),
