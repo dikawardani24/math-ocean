@@ -7,6 +7,7 @@ import '../core/feedback.dart';
 import '../theme.dart';
 import '../widgets/ui_kit.dart';
 import 'kecrekan_controller.dart';
+import 'kecrekan_math.dart';
 
 /// The playable 3D counting frame.
 ///
@@ -116,7 +117,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
     const dragThreshold = 22.0;
     if (dx.abs() < dragThreshold) return;
     final before = widget.controller.math.countFor(rod);
-    final target = (before + (dx < 0 ? 1 : -1)).clamp(0, 10);
+    final target = (before + (dx < 0 ? 1 : -1)).clamp(0, KecrekanMath.beadsPerRod);
     _dragMovedOneBead = true;
     if (target == before) return;
     widget.controller.setRowCount(rod, target);
