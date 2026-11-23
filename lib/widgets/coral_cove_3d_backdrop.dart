@@ -74,7 +74,7 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
       if (bounds != null) {
         final center = bounds.center;
         final verticalExtent = (bounds.max.y - bounds.min.y).abs();
-        final safeHeight = math.max(verticalExtent, 1.0);
+        final safeHeight = math.min(math.max(verticalExtent, 1.0), 14.0);
         final distance = safeHeight / (2 * math.tan(fovY / 2)) * 0.88;
         final direction = viewDirection.normalized();
         _camera = PerspectiveCamera(
