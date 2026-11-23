@@ -10,12 +10,14 @@ class TurtleCompanion extends StatefulWidget {
     super.key,
     this.size = 150,
     this.cheering = false,
+    this.eating = false,
     this.onTap,
     this.flip = false,
   });
 
   final double size;
   final bool cheering;
+  final bool eating;
   final VoidCallback? onTap;
   final bool flip;
 
@@ -63,6 +65,7 @@ class _TurtleCompanionState extends State<TurtleCompanion>
                 t: t,
                 blink: blink,
                 cheering: widget.cheering,
+                eating: widget.eating,
               ),
             ),
           );
@@ -77,11 +80,13 @@ class _TurtlePainter extends CustomPainter {
     required this.t,
     required this.blink,
     required this.cheering,
+    required this.eating,
   });
 
   final double t;
   final double blink;
   final bool cheering;
+  final bool eating;
 
   static const _outline = Color(0xFF0A4C4C);
   static const _skin = Color(0xFF86E3B6);
@@ -108,7 +113,14 @@ class _TurtlePainter extends CustomPainter {
     _frontFlipper(canvas, left: true, wave: wave);
     _frontFlipper(canvas, left: false, wave: wave);
     _body(canvas);
+    canvas.save();
+    final chew = eating ? math.sin(t * math.pi * 2 * 5) * 2.2 : 0.0;
+    canvas.translate(0, chew);
     _head(canvas);
+    canvas.restore();
+    if (eating && math.sin(t * math.pi * 2 * 5) > 0.15) {
+      _biteOfSeagrass(canvas);
+    }
     if (cheering || t < 0.25) _bubbles(canvas);
     canvas.restore();
   }
@@ -251,23 +263,58 @@ class _TurtlePainter extends CustomPainter {
     _eye(canvas, const Offset(144, 64));
     _eye(canvas, const Offset(168, 63));
 
-    // Smile.
-    canvas.drawArc(
-      Rect.fromCenter(center: const Offset(157, 84), width: 18, height: 13),
-      0.18,
-      math.pi - 0.36,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round
-        ..color = _outline,
-    );
+    // The mouth opens and closes in a visible bite cycle while eating.
+    if (eating && math.sin(t * math.pi * 2 * 5) > 0.15) {
+      canvas.drawOval(
+        Rect.fromCenter(center: const Offset(158, 86), width: 13, height: 11),
+        Paint()..color = const Color(0xFF174A43),
+      );
+      canvas.drawArc(
+        Rect.fromCenter(center: const Offset(158, 82), width: 13, height: 8),
+        0,
+        math.pi,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = _outline,
+      );
+    } else {
+      canvas.drawArc(
+        Rect.fromCenter(center: const Offset(157, 84), width: 18, height: 13),
+        0.18,
+        math.pi - 0.36,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3
+          ..strokeCap = StrokeCap.round
+          ..color = _outline,
+      );
+    }
 
     // Tiny nostril dots.
     final dot = Paint()..color = _outline.withValues(alpha: 0.5);
     canvas.drawCircle(const Offset(163, 77), 1.2, dot);
     canvas.drawCircle(const Offset(169, 77), 1.2, dot);
+  }
+
+  void _biteOfSeagrass(Canvas canvas) {
+    final stem = Paint()
+      ..color = const Color(0xFF9BE36C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    final leaf = Paint()..color = const Color(0xFF55C978);
+    canvas.drawLine(const Offset(169, 91), const Offset(177, 101), stem);
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(173, 94), width: 9, height: 4),
+      leaf,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(178, 100), width: 8, height: 4),
+      leaf,
+    );
   }
 
   void _eye(Canvas canvas, Offset centre) {
@@ -376,7 +423,8 @@ class _TurtlePainter extends CustomPainter {
   bool shouldRepaint(covariant _TurtlePainter oldDelegate) =>
       oldDelegate.t != t ||
       oldDelegate.blink != blink ||
-      oldDelegate.cheering != cheering;
+      oldDelegate.cheering != cheering ||
+      oldDelegate.eating != eating;
 }
 
 class TurtleTalk extends StatelessWidget {
