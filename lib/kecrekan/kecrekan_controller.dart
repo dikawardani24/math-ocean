@@ -119,7 +119,9 @@ class KecrekanController extends ChangeNotifier {
             fovRadiansY: 34 * dm.pi / 180,
             // The framing helper fits a bounding sphere against vertical FOV.
             // A 0.7 portrait viewport needs about 1.4x more horizontal room.
-            margin: aspectRatio < 1 ? (1 / aspectRatio).clamp(1.0, 1.65) : 1.08,
+            margin: aspectRatio < 1
+                ? (1 / aspectRatio).clamp(1.0, 1.65).toDouble()
+                : 1.08,
           );
   }
 
