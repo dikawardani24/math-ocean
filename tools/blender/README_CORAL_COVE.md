@@ -11,8 +11,8 @@ blender --background --python tools/blender/build_coral_cove.py
 The generator writes directly to `assets/3d/coral_cove/`:
 
 - `coral_cove_environment.glb` — runtime scene loaded by Flutter
-- `coral_cove_environment.blend` — editable Blender source
-- `coral_cove_preview.png` — render for visual review
+- `artifacts/blender/coral_cove/coral_cove_environment.blend` — editable Blender source
+- `artifacts/blender/coral_cove/coral_cove_preview.png` — render for visual review
 
 Then run the app normally:
 
