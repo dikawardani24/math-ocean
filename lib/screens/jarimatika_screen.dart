@@ -16,10 +16,11 @@ import '../widgets/ui_kit.dart';
 /// Finger maths. Right hand = ones, left hand = tens, using the canonical
 /// Jarimatika finger shapes.
 class JarimatikaScreen extends StatefulWidget {
-  const JarimatikaScreen({super.key, this.mission, this.practice = false});
+  const JarimatikaScreen({super.key, this.mission, this.practice = false, this.learnMode = false});
 
   final Mission? mission;
   final bool practice;
+  final bool learnMode;
 
   @override
   State<JarimatikaScreen> createState() => _JarimatikaScreenState();
@@ -34,6 +35,8 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   Timer? _speakTimer;
 
   bool _solved = false;
+  int _lessonStep = 0;
+  static const _lessonTargets = <int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 20, 25, 50, 99];
   bool _celebrate = false;
   bool _usedHint = false;
   int _attempts = 0;
@@ -42,6 +45,12 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   String _encouragement = '';
 
   bool get _isPractice => widget.practice || widget.mission == null;
+  bool get _isLearning => widget.learnMode;
+  String get _lessonInstruction {
+    if (_lessonStep < 9) return 'Use your RIGHT hand. Open fingers to show $_target. This hand counts ones.';
+    if (_lessonStep == 9) return 'Now use your LEFT hand. One open finger on the left means TEN.';
+    return 'Combine both hands: LEFT hand shows tens, RIGHT hand shows ones. Make $_target.';
+  }
 
   int? get _rightValue => handValue(_right);
   int? get _leftValue => handValue(_left);
@@ -55,7 +64,7 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   @override
   void initState() {
     super.initState();
-    _target = widget.mission?.target ?? (1 + math.Random().nextInt(10));
+    _target = widget.learnMode ? _lessonTargets.first : (widget.mission?.target ?? (1 + math.Random().nextInt(10)));
     _shake = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 460),
@@ -138,12 +147,49 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   }
 
   void _check() {
-    if (_solved) return;
+    if (_solved) {
+      if (_isLearning) Navigator.of(context).maybePop();
+      return;
+    }
     if (_total == _target) {
+      if (_isLearning) {
+        _advanceLesson();
+        return;
+      }
       _success();
     } else {
       _wrong();
     }
+  }
+
+  void _advanceLesson() {
+    AudioService.instance.sfx('hand_success');
+    Feel.success();
+    if (_lessonStep >= _lessonTargets.length - 1) {
+      setState(() {
+        _solved = true;
+        _celebrate = true;
+        _encouragement = 'You did it! You can show ones, tens, and two-digit numbers.';
+      });
+      AudioService.instance.speak('Amazing! You completed the Jarimatika lesson. You can show ones and tens with both hands.');
+      return;
+    }
+    final nextStep = _lessonStep + 1;
+    final nextTarget = _lessonTargets[nextStep];
+    setState(() {
+      _lessonStep = nextStep;
+      _target = nextTarget;
+      _right.clear();
+      _left.clear();
+      _attempts = 0;
+      _usedHint = false;
+      _encouragement = nextStep == 9
+          ? 'Great! Now we learn tens. One left finger is ten.'
+          : nextStep > 9
+              ? 'Now combine tens and ones to make $nextTarget.'
+              : 'Nice! Try the next number.';
+    });
+    AudioService.instance.speak(_lessonInstruction);
   }
 
   void _success() {
@@ -212,6 +258,17 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
   }
 
   void _again() {
+    final current = widget.mission;
+    if (current != null && current.id.startsWith('challenge_')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => JarimatikaScreen(
+            mission: randomChallengeFor(StationKind.jarimatika),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       _right.clear();
       _left.clear();
@@ -274,7 +331,7 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
                   children: [
                     OceanHeader(
                       title: widget.mission?.title ?? 'Jarimatika',
-                      subtitle: 'Finger Reef · ones and tens',
+                      subtitle: _isLearning ? 'Learn Jarimatika · Step ${_lessonStep + 1} of ${_lessonTargets.length}' : 'Finger Reef · ones and tens',
                       onBack: () => Navigator.of(context).maybePop(),
                       trailing: RoundIconButton(
                         icon: Icons.menu_book_rounded,
@@ -287,10 +344,9 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
                     const SizedBox(height: 8),
                     _FingerPrompt(
                       target: _target,
-                      story:
-                          widget.mission?.story ??
-                          'Can you show $_target with your fingers? '
-                              'Tap a finger to open or fold it.',
+                      story: _isLearning
+                          ? _lessonInstruction
+                          : widget.mission?.story ?? 'Can you show $_target with your fingers? Tap a finger to open or fold it.',
                       onSpeak: _speak,
                       onGuide: _showGuide,
                     ),
@@ -364,7 +420,7 @@ class _JarimatikaScreenState extends State<JarimatikaScreen>
                       children: [
                         Expanded(
                           child: BigButton(
-                            label: _solved ? 'Solved!' : 'Check my fingers',
+                            label: _solved ? (_isLearning ? 'Lesson complete!' : 'Solved!') : (_isLearning ? 'Check this step' : 'Check my fingers'),
                             icon: _solved
                                 ? Icons.check_circle_rounded
                                 : Icons.back_hand_rounded,

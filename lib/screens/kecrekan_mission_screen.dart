@@ -9,6 +9,7 @@ import '../core/feedback.dart';
 import '../core/models.dart';
 import '../core/progress.dart';
 import '../kecrekan/kecrekan_controller.dart';
+import '../kecrekan/kecrekan_math.dart';
 import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
 import '../widgets/ocean_background.dart';
@@ -41,6 +42,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   int _attempts = 0;
   bool _usedHint = false;
   bool _solved = false;
+  bool _eventRevealed = false;
   bool _celebrate = false;
   String _encouragement = '';
   int _reward = 0;
@@ -53,7 +55,13 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   void initState() {
     super.initState();
     _target = _mission?.target ?? _randomTarget();
-    _controller = KecrekanController(initialCount: _mission?.startValue ?? 0);
+    _controller = KecrekanController(
+      initialCount: _mission?.startValue ?? 0,
+      activeRowCount: KecrekanMath.rowsForChallenge(
+        start: _mission?.startValue ?? 0,
+        target: _target,
+      ),
+    );
     _shake = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 480),
@@ -65,8 +73,14 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
 
   void _speak() {
     if (!mounted) return;
-    final line =
-        _mission?.voice ?? 'Can you make $_target? Tap the beads to count.';
+    final mission = _mission;
+    final line = mission == null
+        ? 'Can you make $_target? Explore the beads and find the number.'
+        : mission.isAddition
+        ? 'Look at the pearls already here. How many can you count?'
+        : mission.isSubtraction
+        ? 'Look at all the bubbles before anything happens. How many can you count?'
+        : mission.voice;
     AudioService.instance.speak(line);
   }
 
@@ -79,13 +93,28 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     super.dispose();
   }
 
+  void _revealEvent() {
+    if (_eventRevealed) return;
+    setState(() => _eventRevealed = true);
+    AudioService.instance.sfx('bubble');
+    final line = _mission?.isAddition == true
+        ? 'More pearls have arrived! Count the new group. Bring the two groups together. How many pearls are there altogether?'
+        : 'Some bubbles have popped and disappeared. Look at the bubbles still floating. How many are left?';
+    AudioService.instance.speak(line);
+  }
+
   void _hint() {
+    final mission = _mission;
+    if (!_eventRevealed &&
+        mission != null &&
+        (mission.isAddition || mission.isSubtraction)) {
+      setState(() => _eventRevealed = true);
+    }
     final progress = ProgressScope.read(context);
     setState(() {
       _usedHint = true;
-      _encouragement =
-          _mission?.hint ??
-          'Tap one bead at a time. Each bead you slide over adds one.';
+      _encouragement = _mission?.hint ??
+          'Move the beads and notice how the group changes.';
     });
     AudioService.instance.sfx('bubble');
     AudioService.instance.speak(_encouragement);
@@ -99,8 +128,12 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
     setState(() {
       _attempts++;
       _encouragement = _attempts == 1
-          ? 'Almost! Count the beads you slid over, then try again.'
-          : 'Keep going. Tala believes in you!';
+          ? (_mission?.isAddition == true
+                ? 'Look at both groups. How many are together now?'
+                : _mission?.isSubtraction == true
+                ? 'Some have gone away. Count the ones that are still here.'
+                : 'Count the beads you have moved, then try again.')
+          : 'Keep exploring. Tala believes in you!';
     });
     AudioService.instance.speak(_encouragement);
   }
@@ -189,13 +222,31 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 
   void _again() {
+    final current = _mission;
+    if (current != null && current.id.startsWith('challenge_')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => KecrekanMissionScreen(
+            mission: randomChallengeFor(current.station),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       _solved = false;
       _celebrate = false;
+      _eventRevealed = false;
       _attempts = 0;
       _usedHint = false;
       _encouragement = '';
       if (_isPractice) _target = _randomTarget();
+      _controller.setActiveRowCount(
+        KecrekanMath.rowsForChallenge(
+          start: _mission?.startValue ?? 0,
+          target: _target,
+        ),
+      );
       _controller.resetTo(_mission?.startValue ?? 0);
     });
     _speak();
@@ -262,16 +313,64 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         },
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    _PromptCard(
+                    const SizedBox(height: 4),
+                    _MissionObjective(
                       emoji: mission?.emoji ?? '💧',
-                      story: story,
+                      title: mission?.title ?? 'Free play',
                       target: _target,
-                      equation: mission?.question,
-                      onSpeak: _speak,
-                      compact: MediaQuery.sizeOf(context).height < 700,
+                      prompt: mission == null
+                          ? 'Make $_target'
+                          : mission.isAddition
+                          ? 'How many altogether?'
+                          : mission.isSubtraction
+                          ? 'How many are left?'
+                          : mission.question,
+                      onHelp: () {
+                        showDialog<void>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            backgroundColor: OceanColors.shell,
+                            title: Text(
+                              mission?.title ?? 'How to play',
+                              style: const TextStyle(
+                                color: OceanColors.ink,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            content: Text(
+                              story,
+                              style: const TextStyle(
+                                color: OceanColors.ink,
+                                height: 1.35,
+                              ),
+                            ),
+                            actions: [
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop();
+                                  _speak();
+                                },
+                                icon: const Icon(Icons.volume_up_rounded),
+                                label: const Text('Listen'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                child: const Text('Got it'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 10),
+                    if (mission != null &&
+                        (mission.isAddition || mission.isSubtraction)) ...[
+                      const SizedBox(height: 5),
+                      _OperationStoryStrip(
+                        mission: mission,
+                        revealed: _eventRevealed,
+                      ),
+                      const SizedBox(height: 5),
+                    ],
                     Expanded(
                       child: AnimatedBuilder(
                         animation: _shake,
@@ -283,13 +382,21 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             child: child,
                           );
                         },
-                        child: KecrekanStage(
-                          controller: _controller,
-                          onInteraction: () {
-                            if (_encouragement.isNotEmpty) {
-                              setState(() => _encouragement = '');
-                            }
-                          },
+                        child: IgnorePointer(
+                          ignoring: mission != null &&
+                              (mission.isAddition || mission.isSubtraction) &&
+                              !_eventRevealed,
+                          child: KecrekanStage(
+                            controller: _controller,
+                            showTotal: false,
+                            showResetButton: false,
+                            showHintOverlay: false,
+                            onInteraction: () {
+                              if (_encouragement.isNotEmpty) {
+                                setState(() => _encouragement = '');
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -298,7 +405,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                         padding: const EdgeInsets.only(top: 8),
                         child: _TipLine(text: _encouragement),
                       ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     AnimatedBuilder(
                       animation: _controller,
                       builder: (context, _) {
@@ -316,7 +423,14 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: BigButton(
-                                label: _solved ? 'Solved!' : 'Check my beads',
+                                label: _solved
+                                    ? 'Solved!'
+                                    : mission != null &&
+                                          (mission.isAddition ||
+                                              mission.isSubtraction) &&
+                                          !_eventRevealed
+                                    ? 'Watch what happens'
+                                    : 'Check my beads',
                                 icon: _solved
                                     ? Icons.check_circle_rounded
                                     : Icons.chevron_right_rounded,
@@ -326,14 +440,19 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                                         OceanColors.sunny,
                                         OceanColors.coral,
                                       ],
-                                onTap: _check,
+                                onTap: mission != null &&
+                                        (mission.isAddition ||
+                                            mission.isSubtraction) &&
+                                        !_eventRevealed
+                                    ? _revealEvent
+                                    : _check,
                               ),
                             ),
                           ],
                         );
                       },
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -351,6 +470,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             AudioService.instance.sfx('reset');
                             _controller.resetTo(_mission?.startValue ?? 0);
                             setState(() {
+                              _eventRevealed = false;
                               _solved = false;
                               _celebrate = false;
                               _attempts = 0;
@@ -376,95 +496,152 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   }
 }
 
-class _PromptCard extends StatelessWidget {
-  const _PromptCard({
+
+class _MissionObjective extends StatelessWidget {
+  const _MissionObjective({
     required this.emoji,
-    required this.story,
+    required this.title,
     required this.target,
-    required this.onSpeak,
-    this.equation,
-    this.compact = false,
+    required this.prompt,
+    required this.onHelp,
   });
 
   final String emoji;
-  final String story;
+  final String title;
   final int target;
-  final String? equation;
-  final VoidCallback onSpeak;
-  final bool compact;
+  final String prompt;
+  final VoidCallback onHelp;
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      padding: const EdgeInsets.fromLTRB(14, 11, 12, 12),
-      radius: 22,
-      color: OceanColors.shell.withValues(alpha: 0.96),
-      borderColor: Colors.white.withValues(alpha: 0.7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
             decoration: BoxDecoration(
-              color: OceanColors.mint.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
+              color: OceanColors.shell.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+              boxShadow: oceanShadow(blur: 9, y: 3),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        story,
-                        maxLines: compact ? 2 : 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: OceanColors.ink,
-                          fontWeight: FontWeight.w600,
-                          height: 1.22,
-                        ),
-                      ),
+                Text(emoji, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: OceanColors.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Baloo2',
                     ),
-                    const SizedBox(width: 6),
-                    InkWell(
-                      onTap: onSpeak,
-                      borderRadius: BorderRadius.circular(20),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.volume_up_rounded,
-                          color: OceanColors.teal,
-                          size: 21,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 5,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (equation != null)
-                      _Chip(text: equation!, color: OceanColors.coral),
-                    _Chip(
-                      text: equation == null
-                          ? 'Make $target'
-                          : 'Find the total',
-                      color: OceanColors.teal,
-                      foreground: Colors.white,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: OceanColors.teal,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    prompt,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Baloo2',
                     ),
-                  ],
+                  ),
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 7),
+        Material(
+          color: OceanColors.shell.withValues(alpha: 0.92),
+          shape: const CircleBorder(),
+          child: IconButton(
+            tooltip: 'Mission help',
+            visualDensity: VisualDensity.compact,
+            onPressed: onHelp,
+            icon: const Icon(Icons.help_outline_rounded, color: OceanColors.teal),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Makes the two quantities visible as separate concrete groups. The
+/// Kecrekan starts with the first group already built; the second group is
+/// the new arrival or the group that disappears in the story.
+class _OperationStoryStrip extends StatelessWidget {
+  const _OperationStoryStrip({
+    required this.mission,
+    required this.revealed,
+  });
+
+  final Mission mission;
+  final bool revealed;
+
+  @override
+  Widget build(BuildContext context) {
+    final firstCount = mission.isAddition ? (mission.a ?? 0) : (mission.start ?? 0);
+    final secondCount = mission.b ?? 0;
+    final firstLabel = mission.isAddition ? 'Already here' : 'At the start';
+    final secondLabel = mission.isAddition ? 'New arrivals' : 'Popped';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: OceanColors.abyss.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StoryGroup(
+              count: firstCount,
+              emoji: mission.emoji,
+              label: firstLabel,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: Text(
+              mission.isAddition ? '+' : '−',
+              style: const TextStyle(
+                color: OceanColors.foam,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _StoryGroup(
+              count: revealed ? secondCount : 0,
+              emoji: mission.emoji,
+              label: revealed ? secondLabel : 'Not yet',
+              faded: mission.isSubtraction,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: Text(
+              '= ?',
+              style: TextStyle(
+                color: OceanColors.sunny,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -473,34 +650,49 @@ class _PromptCard extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.text,
-    required this.color,
-    this.foreground = OceanColors.ink,
+class _StoryGroup extends StatelessWidget {
+  const _StoryGroup({
+    required this.count,
+    required this.emoji,
+    required this.label,
+    this.faded = false,
   });
-  final String text;
-  final Color color;
-  final Color foreground;
+
+  final int count;
+  final String emoji;
+  final String label;
+  final bool faded;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: foreground == Colors.white ? color : OceanColors.ink,
-          fontWeight: FontWeight.w800,
-          fontSize: 13,
-          fontFamily: 'Baloo2',
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: OceanColors.foam.withValues(alpha: 0.82),
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Baloo2',
+          ),
         ),
-      ),
+        const SizedBox(height: 3),
+        Wrap(
+          spacing: 1,
+          runSpacing: 1,
+          children: List.generate(
+            count,
+            (_) => Opacity(
+              opacity: faded ? 0.42 : 1,
+              child: Text(emoji, style: const TextStyle(fontSize: 12)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

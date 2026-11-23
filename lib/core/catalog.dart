@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../theme.dart';
 import 'models.dart';
 
@@ -59,13 +61,13 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Two Pearl Piles',
     story:
-        'Two pearls in one pile and three in another. Slide all of them '
-        'together to find the total.',
+        'Pearls rest beside a coral cup. More pearls arrive with the tide. '
+        'How many pearls are together now?',
     target: 5,
     a: 2,
     b: 3,
-    hint: 'Slide two beads, then three more. Count them all.',
-    voice: 'Two plus three. Slide two beads, then three more.',
+    hint: 'Keep the first group together. Count the new arrivals, then think about what happens when the groups join.',
+    voice: 'Look at the pearls already here. Count the new arrivals. How many pearls are together now?',
     emoji: '🐚',
   ),
   Mission(
@@ -73,13 +75,13 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Starfish Pair',
     story:
-        'Four starfish on the left rock and three on the right rock. How '
-        'many starfish altogether?',
+        'Some starfish rest on one rock. Other starfish swim over to join them. '
+        'How many starfish are together?',
     target: 7,
     a: 4,
     b: 3,
-    hint: 'Four beads and three beads. Count the whole group.',
-    voice: 'Four plus three. How many beads altogether?',
+    hint: 'Look at the group already resting on the rock. Count the friends who join. How do the groups fit together?',
+    voice: 'Some starfish are resting here. More friends join them. How many are there altogether?',
     emoji: '⭐',
   ),
   Mission(
@@ -87,13 +89,13 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'High Five',
     story:
-        'Five tiny turtles meet five more turtles. Slide all ten beads to '
-        'see the whole party.',
+        'A group of tiny turtles is having a rest. More friends arrive for the party. '
+        'How many turtles are at the party now?',
     target: 10,
     a: 5,
     b: 5,
-    hint: 'Five beads plus five beads fills a whole row.',
-    voice: 'Five plus five. Slide ten beads altogether.',
+    hint: 'Notice the first group. Now look at the friends who arrived. What do the two groups make together?',
+    voice: 'Look at the turtles already resting. More friends arrive. How many turtles are together?',
     emoji: '🐢',
   ),
   Mission(
@@ -101,13 +103,13 @@ const List<Mission> kMissions = [
     station: StationKind.addition,
     title: 'Coral Climb',
     story:
-        'Six coral flowers grow on one branch and two on another. Slide the '
-        'beads to add them.',
+        'Coral flowers are blooming on a branch. New flowers open nearby. '
+        'How many flowers can you see altogether?',
     target: 8,
     a: 6,
     b: 2,
-    hint: 'Start with six. Slide two more. What number did you land on?',
-    voice: 'Six plus two. Slide six beads, then two more.',
+    hint: 'Keep the flowers already blooming in mind. Look at the new flowers. How many can you see altogether?',
+    voice: 'Some flowers are blooming already. New flowers open nearby. How many can you see altogether?',
     emoji: '🌺',
   ),
 
@@ -117,13 +119,13 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Bubble Pop',
     story:
-        'Eight bubbles are floating. Three pop! Slide three beads back to '
-        'the right to see how many are left.',
+        'Bubbles float above the reef. Some bubbles pop and disappear. '
+        'How many bubbles are still floating?',
     target: 5,
     start: 8,
     b: 3,
-    hint: 'The beads start at eight. Slide three away to the right.',
-    voice: 'Eight take away three. Slide three beads back to the right.',
+    hint: 'Look closely at the bubbles that are still floating. Which ones have disappeared? How many remain?',
+    voice: 'Watch the bubbles. Some pop and disappear. How many are still floating?',
     emoji: '💧',
   ),
   Mission(
@@ -131,13 +133,13 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Shells Away',
     story:
-        'Ten shells sit on the shore. A wave carries four away. How many '
-        'shells stay?',
+        'Shells rest on the shore. A wave sweeps some back into the sea. '
+        'How many shells remain on the sand?',
     target: 6,
     start: 10,
     b: 4,
-    hint: 'Start with all ten beads on the left. Slide four back.',
-    voice: 'Ten take away four. Slide four beads back to the right.',
+    hint: 'Look at the shells still on the sand. Compare them with the group you started with. How many remain?',
+    voice: 'A wave sweeps some shells away. How many are left on the sand?',
     emoji: '🐚',
   ),
   Mission(
@@ -145,13 +147,13 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Kelp Snack',
     story:
-        'Seven little leaves are on the kelp. A hungry fish nibbles two. '
-        'Slide two beads away.',
+        'Kelp leaves are growing. A fish nibbles some leaves. '
+        'How many leaves are still growing?',
     target: 5,
     start: 7,
     b: 2,
-    hint: 'Seven beads start on the left. Slide two to the right.',
-    voice: 'Seven take away two. Slide two beads back.',
+    hint: 'Look at the leaves still growing. Which leaves did the fish nibble? How many remain?',
+    voice: 'A fish nibbles some leaves. How many are still growing?',
     emoji: '🌿',
   ),
   Mission(
@@ -159,13 +161,13 @@ const List<Mission> kMissions = [
     station: StationKind.subtraction,
     title: 'Turtle Trek',
     story:
-        'Nine baby turtles start the race. Five dive into the deep. How '
-        'many keep swimming?',
+        'Baby turtles swim together. Some dive down to explore the deep sea. '
+        'How many turtles keep swimming near the surface?',
     target: 4,
     start: 9,
     b: 5,
-    hint: 'Nine beads on the left. Slide five away.',
-    voice: 'Nine take away five. Slide five beads back to the right.',
+    hint: 'Watch the turtles that dive away. Count the ones that keep swimming near the surface.',
+    voice: 'Some turtles dive into the deep sea. How many keep swimming near the surface?',
     emoji: '🐢',
   ),
 
@@ -219,6 +221,69 @@ const List<Mission> kMissions = [
     emoji: '🙌',
   ),
 ];
+
+/// Creates a fresh challenge instead of asking a child to pick a fixed
+/// answer from a mission list. Kecrekan addition/subtraction stay within ten;
+/// Jarimatika uses both hands for a two-digit number.
+Mission randomChallengeFor(StationKind kind, {math.Random? random}) {
+  final rng = random ?? math.Random();
+  switch (kind) {
+    case StationKind.counting:
+      final target = 1 + rng.nextInt(20);
+      return Mission(
+        id: 'challenge_count_$target',
+        station: kind,
+        title: 'Treasure Count',
+        story: 'A group of ocean treasures is waiting. Count them with the beads.',
+        target: target,
+        voice: 'Look carefully at the treasures. How many can you count?',
+        hint: 'Move the beads one at a time and count the group.',
+        emoji: '🐚',
+      );
+    case StationKind.addition:
+      final a = 1 + rng.nextInt(9);
+      final b = 1 + rng.nextInt(10 - a);
+      return Mission(
+        id: 'challenge_add_${a}_$b',
+        station: kind,
+        title: 'Pearl Gathering',
+        story: 'Some pearls are here. More pearls arrive. How many are together?',
+        target: a + b,
+        a: a,
+        b: b,
+        voice: 'Look at the pearls already here. More arrive. How many altogether?',
+        hint: 'Keep the first group. Join the new arrivals and count them together.',
+        emoji: '🐚',
+      );
+    case StationKind.subtraction:
+      final start = 2 + rng.nextInt(9);
+      final removed = 1 + rng.nextInt(start - 1);
+      return Mission(
+        id: 'challenge_sub_${start}_$removed',
+        station: kind,
+        title: 'Tide Takes Treasures',
+        story: 'Some treasures drift away with the tide. How many are left?',
+        target: start - removed,
+        start: start,
+        b: removed,
+        voice: 'Watch some treasures drift away. How many remain?',
+        hint: 'Move away the treasures that disappeared, then count what remains.',
+        emoji: '🫧',
+      );
+    case StationKind.jarimatika:
+      final target = 10 + rng.nextInt(90);
+      return Mission(
+        id: 'challenge_jar_$target',
+        station: kind,
+        title: 'Finger Number Challenge',
+        story: 'Show this number with both Jarimatika hands.',
+        target: target,
+        voice: 'Show $target with your Jarimatika hands. Left hand is tens, right hand is ones.',
+        hint: 'Left hand shows tens. Right hand shows ones.',
+        emoji: '✋',
+      );
+  }
+}
 
 List<Mission> missionsFor(StationKind kind) =>
     kMissions.where((m) => m.station == kind).toList(growable: false);

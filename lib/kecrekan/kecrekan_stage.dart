@@ -7,21 +7,22 @@ import '../core/feedback.dart';
 import '../theme.dart';
 import '../widgets/ui_kit.dart';
 import 'kecrekan_controller.dart';
-import 'kecrekan_math.dart';
 
 /// The playable 3D counting frame.
 ///
-/// The imported GLB is the only thing drawn here: 100 independently
-/// addressable bead nodes, a real camera, raycast picking and a spring per
-/// bead. No painted beads, no flattened fake.
+/// The imported GLB is the only thing drawn here: up to 25 independently
+/// addressable bead nodes, a real camera, raycast picking and contact-based
+/// movement. No painted beads, no flattened fake.
 class KecrekanStage extends StatefulWidget {
   const KecrekanStage({
     super.key,
     required this.controller,
-    this.hint = 'Drag the beads, or tap one to slide it',
+    this.hint = 'Grab a bead and push its neighbours',
     this.interactive = true,
     this.onInteraction,
     this.showTotal = true,
+    this.showResetButton = true,
+    this.showHintOverlay = true,
     this.height,
   });
 
@@ -30,6 +31,8 @@ class KecrekanStage extends StatefulWidget {
   final bool interactive;
   final VoidCallback? onInteraction;
   final bool showTotal;
+  final bool showResetButton;
+  final bool showHintOverlay;
   final double? height;
 
   @override
@@ -39,10 +42,6 @@ class KecrekanStage extends StatefulWidget {
 class _KecrekanStageState extends State<KecrekanStage> {
   Size _size = Size.zero;
   KecrekanBead? _downBead;
-  int? _dragRod;
-  int _dragStartCount = 0;
-  double _dragStartX = 0;
-  double _dragZ = 0;
   bool _touched = false;
   bool _started = false;
 
@@ -72,7 +71,6 @@ class _KecrekanStageState extends State<KecrekanStage> {
     final bead =
         _downBead ?? widget.controller.beadAt(details.localPosition, _size);
     _downBead = null;
-    _dragRod = null;
     if (bead == null) return;
     final before = widget.controller.total;
     final row = widget.controller.toggleBead(bead);
@@ -83,63 +81,57 @@ class _KecrekanStageState extends State<KecrekanStage> {
     }
   }
 
-  /// Grab the bead under the initial pointer-down position.
-  ///
-  /// Picking uses projected bead centres with a forgiving radius, so the child
-  /// does not have to hit the mesh. The row is locked here and every later
-  /// update stays on it.
+  /// Grab the bead under the initial pointer-down position and keep the drag
+  /// constrained to that rod.
   void _panDown(DragDownDetails details) {
     if (!widget.interactive) return;
     final bead = widget.controller.beadAt(details.localPosition, _size);
     _downBead = bead;
-    if (bead == null) {
-      _dragRod = null;
-      return;
-    }
-    _dragRod = bead.rod;
-    _dragZ = bead.z;
   }
 
-  /// Anchor the drag where the gesture was actually recognised, so the touch
-  /// slop the finger spent before the pan won does not change the count.
+  /// Keep the identity of the initially grabbed bead for the entire gesture.
   void _panStart(DragStartDetails details) {
-    final rod = _dragRod;
-    if (rod == null) return;
-    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
-    if (x == null) {
-      _dragRod = null;
-      return;
-    }
-    _dragStartCount = widget.controller.math.countFor(rod);
-    _dragStartX = x;
-  }
-
-  void _panUpdate(DragUpdateDetails details) {
-    final rod = _dragRod;
-    if (rod == null || !widget.interactive) return;
-    final x = widget.controller.planeX(details.localPosition, _size, z: _dragZ);
-    if (x == null) return;
-    // Anchored to the start of the drag, so reversing retraces the same
-    // counts and no frames are lost.
-    final target = KecrekanMath.dragCount(
-      startCount: _dragStartCount,
-      dx: x - _dragStartX,
+    final bead = _downBead;
+    if (bead == null) return;
+    final worldX = widget.controller.planeX(
+      details.localPosition,
+      _size,
+      z: bead.z,
     );
-    final before = widget.controller.math.countFor(rod);
-    if (target == before) return;
-    widget.controller.setRowCount(rod, target);
-    _playForRow(widget.controller.math.countFor(rod));
-    Feel.snap();
+    if (worldX == null) return;
+    widget.controller.beginBeadDrag(bead, worldX);
+    // Collapse the mission details as soon as the child grabs a bead,
+    // not only after the bead crosses the counting threshold.
     _notifyTouched();
   }
 
+  void _panUpdate(DragUpdateDetails details) {
+    if (!widget.interactive) return;
+    final bead = _downBead;
+    if (bead == null) return;
+    final worldX = widget.controller.planeX(
+      details.localPosition,
+      _size,
+      z: bead.z,
+    );
+    if (worldX == null) return;
+    final before = widget.controller.total;
+    final rowCount = widget.controller.dragBeadTo(worldX);
+    if (rowCount == null) return;
+    if (widget.controller.total != before) {
+      _playForRow(rowCount);
+      Feel.snap();
+      _notifyTouched();
+    }
+  }
+
   void _panEnd(DragEndDetails details) {
-    _dragRod = null;
+    widget.controller.endBeadDrag();
     _downBead = null;
   }
 
   void _panCancel() {
-    _dragRod = null;
+    widget.controller.endBeadDrag();
     _downBead = null;
   }
 
@@ -156,6 +148,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         _size = Size(constraints.maxWidth, constraints.maxHeight);
+        widget.controller.updateCameraForViewport(_size);
         return AnimatedBuilder(
           animation: widget.controller,
           builder: (context, _) {
@@ -233,7 +226,8 @@ class _KecrekanStageState extends State<KecrekanStage> {
                         top: 14,
                         child: _TotalBadge(total: controller.total),
                       ),
-                    Positioned(
+                    if (widget.showResetButton)
+                      Positioned(
                       right: 12,
                       top: 12,
                       child: RoundIconButton(
@@ -250,7 +244,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
                         },
                       ),
                     ),
-                    if (controller.ready)
+                    if (widget.showHintOverlay && controller.ready)
                       Positioned(
                         left: 14,
                         right: 64,

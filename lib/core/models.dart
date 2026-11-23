@@ -94,8 +94,11 @@ class Mission {
   final String voice;
   final String emoji;
 
-  int get startValue =>
-      start ?? (station == StationKind.subtraction ? target : 0);
+  /// The frame begins with the first group already represented. Addition
+  /// therefore starts at [a], subtraction starts at [start], and counting
+  /// starts empty.
+  int get startValue => start ??
+      (isAddition ? (a ?? 0) : isSubtraction ? target : 0);
 
   bool get isAddition => station == StationKind.addition;
   bool get isSubtraction => station == StationKind.subtraction;

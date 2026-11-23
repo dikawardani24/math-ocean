@@ -71,8 +71,7 @@ class StationScreen extends StatelessWidget {
                         kind: kind,
                         progress: progress,
                         onDive: () {
-                          final mission = progress.nextMission(kind);
-                          if (mission == null) return;
+                          final mission = randomChallengeFor(kind);
                           if (isJarima &&
                               !progress.jarimatikaChallengeUnlocked) {
                             Navigator.of(context).push(
@@ -107,95 +106,155 @@ class StationScreen extends StatelessWidget {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
                     sliver: SliverToBoxAdapter(
-                      child: Row(
-                        children: [
-                          Text(
-                            isJarima ? 'Finger challenges' : 'Missions',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: OceanColors.foam,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const Spacer(),
-                          if (!isJarima)
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => KecrekanMissionScreen(
-                                      practice: true,
-                                      practiceKind: kind,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.explore_rounded, size: 18),
-                              label: const Text('Free play'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: OceanColors.aqua,
-                              ),
-                            ),
-                        ],
+                      child: Text(
+                        'Choose how to explore',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: OceanColors.foam,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                    sliver: SliverList.separated(
-                      itemCount: missions.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final mission = missions[index];
-                        final unlocked = isJarima
-                            ? progress.jarimatikaChallengeUnlocked &&
-                                  progress.isMissionUnlocked(mission)
-                            : progress.isMissionUnlocked(mission);
-                        return _MissionRow(
-                          index: index,
-                          mission: mission,
-                          stars: progress.starsFor(mission.id),
-                          unlocked: unlocked,
-                          onTap: unlocked
-                              ? () => _openMission(context, mission)
-                              : () => showOceanSnack(
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          _ModeCard(
+                            icon: Icons.menu_book_rounded,
+                            title: 'Learn',
+                            description: isJarima
+                                ? 'Discover how the fingers represent numbers.'
+                                : kind == StationKind.counting
+                                ? 'Learn to count treasures one by one.'
+                                : kind == StationKind.addition
+                                ? 'See how two groups join together.'
+                                : 'See what happens when a group gets smaller.',
+                            color: OceanColors.aqua,
+                            onTap: () {
+                              if (isJarima) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const JarimatikaScreen(learnMode: true),
+                                  ),
+                                );
+                              } else {
+                                final lesson = missionsFor(kind).first;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => KecrekanMissionScreen(
+                                      mission: lesson,
+                                      practice: true,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _ModeCard(
+                            icon: Icons.waves_rounded,
+                            title: 'Challenge',
+                            description: isJarima
+                                ? 'Get a fresh random number and show it with both hands.'
+                                : 'Get a fresh task each time. No choosing the answer.',
+                            color: OceanColors.sunny,
+                            locked: isJarima && !progress.jarimatikaChallengeUnlocked,
+                            onTap: () {
+                              if (isJarima && !progress.jarimatikaChallengeUnlocked) {
+                                showOceanSnack(
                                   context,
-                                  isJarima
-                                      ? 'Practice on the hands to unlock this '
-                                            'challenge. First-try answers '
-                                            'build mastery.'
-                                      : 'Finish the mission above first.',
-                                  icon: isJarima
-                                      ? Icons.back_hand_rounded
-                                      : Icons.lock_rounded,
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (!isJarima)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                      sliver: SliverToBoxAdapter(
-                        child: _FreePlayCard(
-                          kind: kind,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => KecrekanMissionScreen(
-                                  practice: true,
-                                  practiceKind: kind,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                  'Explore Learn first and build your finger skills to unlock challenges.',
+                                  icon: Icons.lock_rounded,
+                                );
+                                return;
+                              }
+                              final challenge = randomChallengeFor(kind);
+                              _openMission(context, challenge);
+                            },
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                   const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.onTap,
+    this.locked = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final VoidCallback onTap;
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: OceanColors.shell.withValues(alpha: 0.97),
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(icon, color: color, size: 29),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: OceanColors.ink,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: OceanColors.inkSoft,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                locked ? Icons.lock_rounded : Icons.arrow_forward_ios_rounded,
+                color: OceanColors.inkSoft,
+                size: 18,
+              ),
+            ],
           ),
         ),
       ),

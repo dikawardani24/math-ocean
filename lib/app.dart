@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'core/audio_service.dart';
 import 'core/progress.dart';
-import 'screens/home_screen.dart';
 import 'theme.dart';
+import 'world/world_map_screen.dart';
 
 class MathOceanApp extends StatefulWidget {
   const MathOceanApp({super.key, required this.progress});
@@ -45,7 +45,7 @@ class _MathOceanAppState extends State<MathOceanApp>
     return ProgressScope(
       controller: widget.progress,
       child: MaterialApp(
-        title: 'Math Rings · Ocean Numberland',
+        title: 'Math Ocean',
         debugShowCheckedModeBanner: false,
         theme: buildOceanTheme(),
         builder: (context, child) => MediaQuery.withClampedTextScaling(
@@ -53,7 +53,7 @@ class _MathOceanAppState extends State<MathOceanApp>
           maxScaleFactor: 1.15,
           child: child ?? const SizedBox.shrink(),
         ),
-        home: const HomeScreen(),
+        home: const WorldMapScreen(),
       ),
     );
   }
