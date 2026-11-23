@@ -319,8 +319,8 @@ def make_bead_mesh(name: str, mat: bpy.types.Material, band_mat: bpy.types.Mater
 
 def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) -> None:
     col = collection("Kecrekan_Beads")
-    # Ten shared meshes: five colours, each with a deep first-five and a light
-    # second-five shade. Every bead remains an independent glTF node.
+    # Five shared colour meshes keep the row palette varied while all five
+    # beads on a row share the same tactile finish.
     meshes: dict[tuple[int, bool], bpy.types.Mesh] = {}
     for color_index, (name, _deep, _light) in enumerate(BEAD_COLORS):
         for is_deep in (True, False):
@@ -347,7 +347,7 @@ def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) ->
             bead["role"] = "bead"
             bead["rod_index"] = row
             bead["bead_index"] = i
-            bead["group"] = 5 if i < 5 else 10
+            bead["group"] = 5
             bead["color"] = BEAD_COLORS[color_index][0]
             bead["active_value"] = 1
             bead.parent = root
