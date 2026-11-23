@@ -28,7 +28,7 @@ class KecrekanBead {
 }
 
 /// Owns the real 3D Kecrekan: the scene, the camera, the imported bead nodes
-/// and the small spring solver that gives each bead weight.
+/// and the 1D contact solver that prevents bead overlap and propagates pushes.
 class KecrekanController extends ChangeNotifier {
   KecrekanController({
     this.initialCount = 0,
