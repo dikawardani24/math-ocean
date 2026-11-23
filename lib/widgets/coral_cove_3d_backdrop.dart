@@ -44,9 +44,6 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
 
       _scene.add(model);
       _scene.environmentIntensity = 0.8;
-
-      // A real underwater sky fills every pixel not covered by reef geometry.
-      // Without a skybox flutter_scene clears those pixels to transparent/black.
       _scene.skybox = Skybox(
         GradientSkySource(
           zenithColor: vm.Vector3(0.015, 0.20, 0.31),
@@ -58,31 +55,21 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
         ),
         intensity: 0.9,
       );
-
       _scene.directionalLight = DirectionalLight(
         direction: vm.Vector3(-0.35, -0.7, 1),
         color: vm.Vector3(0.78, 0.92, 1),
         intensity: 1.25,
       );
 
-      final bounds = model.combinedWorldBounds;
-      if (bounds != null) {
-        // Pull the camera closer than the default inspection framing so the
-        // reef fills the portrait playfield instead of reading like a model
-        // preview floating in the middle of a large empty viewport.
-        _camera = PerspectiveCamera.framing(
-          bounds,
-          direction: vm.Vector3(0, -0.16, -1),
-          fovRadiansY: 54 * math.pi / 180,
-          margin: 0.78,
-        );
-      } else {
-        _camera = PerspectiveCamera(
-          position: vm.Vector3(0, 7, -18),
-          target: vm.Vector3(0, 1, 0),
-          fovRadiansY: 54 * math.pi / 180,
-        );
-      }
+      // The Blender scene is authored as a wide landscape diorama. Do not
+      // frame its full bounding box: on a portrait phone that makes the reef
+      // look like a small object floating in the middle of the screen.
+      // Instead, use a close, fixed portrait camera aimed at the central reef.
+      _camera = PerspectiveCamera(
+        position: vm.Vector3(0, 5.4, 8.8),
+        target: vm.Vector3(0, 2.0, 0),
+        fovRadiansY: 43 * math.pi / 180,
+      );
 
       if (mounted) setState(() => _loaded = true);
     } catch (error, stack) {
