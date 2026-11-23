@@ -264,20 +264,27 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    _PromptCard(
-                      emoji: mission?.emoji ?? '💧',
-                      story: story,
-                      target: _target,
-                      equation: mission?.question,
-                      onSpeak: _speak,
-                      onCollapse: () => setState(() => _promptExpanded = false),
-                    ),
                     AnimatedSize(
                       duration: const Duration(milliseconds: 260),
                       curve: Curves.easeInOutCubic,
                       alignment: Alignment.topCenter,
                       child: _promptExpanded
-                          ? const SizedBox(height: 6)
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _PromptCard(
+                                  emoji: mission?.emoji ?? '💧',
+                                  story: story,
+                                  target: _target,
+                                  equation: mission?.question,
+                                  onSpeak: _speak,
+                                  onCollapse: () => setState(
+                                    () => _promptExpanded = false,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                              ],
+                            )
                           : const SizedBox.shrink(),
                     ),
                     Expanded(
