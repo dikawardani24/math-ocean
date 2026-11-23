@@ -70,7 +70,7 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
       // crops the far left/right edges.
       final bounds = model.combinedWorldBounds;
       const fovY = 48 * math.pi / 180;
-      const viewDirection = vm.Vector3(0, -0.16, -1);
+      final viewDirection = vm.Vector3(0, -0.16, -1);
       if (bounds != null) {
         final center = bounds.center;
         final verticalExtent = (bounds.max.y - bounds.min.y).abs();
