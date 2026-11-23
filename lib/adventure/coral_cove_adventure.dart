@@ -13,7 +13,7 @@ import '../kecrekan/kecrekan_math.dart';
 import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
 import '../widgets/coral_cove_3d_backdrop.dart';
-import '../widgets/turtle_companion.dart';
+import '../widgets/turtle_3d_companion.dart';
 import '../widgets/ui_kit.dart';
 
 
@@ -221,7 +221,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
               offset: Offset(0, math.sin(_swim.value * math.pi * 2) * 8),
               child: child,
             ),
-            child: TurtleCompanion(size: 196, onTap: () => AudioService.instance.speak(_dialogue)),
+            child: GestureDetector(
+              onTap: () => AudioService.instance.speak(_dialogue),
+              child: const Turtle3DCompanion(size: 196),
+            ),
           ),
           const SizedBox(height: 14),
           SpeechBubble(message: _dialogue),
@@ -295,7 +298,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
           Positioned(
             bottom: 10,
             left: constraints.maxWidth * .34,
-            child: TurtleCompanion(size: 112),
+            child: Turtle3DCompanion(size: 120),
           ),
           for (var i = 0; i < _target; i++)
             if (!_collected.contains(i))
@@ -367,10 +370,14 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     AnimatedScale(
                       scale: hovering ? 1.12 : 1,
                       duration: const Duration(milliseconds: 180),
-                      child: TurtleCompanion(
+                      child: Turtle3DCompanion(
                         size: 190,
-                        cheering: _fedGrass.isNotEmpty && !_isEating,
-                        eating: _isEating,
+                        animation: _isEating
+                            ? 'Eat_Chew'
+                            : _finishingFeed
+                                ? 'Happy_Reaction'
+                                : 'Idle_Swim',
+                        loop: !_isEating && !_finishingFeed,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -497,7 +504,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          TurtleCompanion(size: 184, cheering: true),
+          const Turtle3DCompanion(size: 184, animation: 'Happy_Reaction', loop: false),
           const SizedBox(height: 10),
           SpeechBubble(message: _dialogue),
           const SizedBox(height: 14),
