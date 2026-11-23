@@ -346,7 +346,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       _OperationStoryStrip(
                         mission: mission,
                         revealed: _eventRevealed,
-                        onReveal: _revealEvent,
                       ),
                       const SizedBox(height: 5),
                     ],
@@ -402,7 +401,13 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: BigButton(
-                                label: _solved ? 'Solved!' : 'Check my beads',
+                                label: _solved
+                                    ? 'Solved!'
+                                    : mission != null &&
+                                          (mission.isAddition || mission.isSubtraction) &&
+                                          !_eventRevealed
+                                    ? 'Watch what happens'
+                                    : 'Check my beads',
                                 icon: _solved
                                     ? Icons.check_circle_rounded
                                     : Icons.chevron_right_rounded,
@@ -412,7 +417,11 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                                         OceanColors.sunny,
                                         OceanColors.coral,
                                       ],
-                                onTap: _check,
+                                onTap: mission != null &&
+                                        (mission.isAddition || mission.isSubtraction) &&
+                                        !_eventRevealed
+                                    ? _revealEvent
+                                    : _check,
                               ),
                             ),
                           ],
@@ -552,12 +561,10 @@ class _OperationStoryStrip extends StatelessWidget {
   const _OperationStoryStrip({
     required this.mission,
     required this.revealed,
-    required this.onReveal,
   });
 
   final Mission mission;
   final bool revealed;
-  final VoidCallback onReveal;
 
   @override
   Widget build(BuildContext context) {
@@ -613,13 +620,6 @@ class _OperationStoryStrip extends StatelessWidget {
               ),
             ),
           ),
-          if (!revealed)
-            IconButton(
-              onPressed: onReveal,
-              tooltip: mission.isAddition ? 'See what arrives' : 'Watch what happens',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.play_circle_fill_rounded, color: OceanColors.sunny),
-            ),
         ],
       ),
     );
