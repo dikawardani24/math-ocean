@@ -53,8 +53,8 @@ class _Turtle3DCompanionState extends State<Turtle3DCompanion>
           final phase = _swim.value * math.pi * 2;
           // A slow oval path, not a nervous shake: Tala swims left/right,
           // rises and dips, and gently banks into each turn.
-          final horizontal = math.sin(phase) * widget.size * .025;
-          final vertical = math.sin(phase * 2) * widget.size * .012;
+          final horizontal = math.sin(phase) * widget.size * .015;
+          final vertical = math.sin(phase * 2) * widget.size * .008;
           final bank = math.sin(phase) * .018;
           return Transform.translate(
             offset: Offset(horizontal, vertical),
@@ -77,9 +77,9 @@ class _Turtle3DCompanionState extends State<Turtle3DCompanion>
       camera: PerspectiveCamera(
         // glTF is Y-up / -Z-forward. Keep the camera in front and zoom in
         // enough that the whole character reads clearly on a phone.
-        position: vm.Vector3(0, 1.15, -4.75),
-        target: vm.Vector3(0, .16, 0),
-        fovRadiansY: 40 * math.pi / 180,
+        position: vm.Vector3(0, 1.05, -4.05),
+        target: vm.Vector3(0, .20, 0),
+        fovRadiansY: 34 * math.pi / 180,
         fovNear: .05,
         fovFar: 30,
       ),
