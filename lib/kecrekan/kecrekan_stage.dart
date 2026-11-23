@@ -21,6 +21,8 @@ class KecrekanStage extends StatefulWidget {
     this.interactive = true,
     this.onInteraction,
     this.showTotal = true,
+    this.showResetButton = true,
+    this.showHintOverlay = true,
     this.height,
   });
 
@@ -29,6 +31,8 @@ class KecrekanStage extends StatefulWidget {
   final bool interactive;
   final VoidCallback? onInteraction;
   final bool showTotal;
+  final bool showResetButton;
+  final bool showHintOverlay;
   final double? height;
 
   @override
@@ -221,7 +225,8 @@ class _KecrekanStageState extends State<KecrekanStage> {
                         top: 14,
                         child: _TotalBadge(total: controller.total),
                       ),
-                    Positioned(
+                    if (widget.showResetButton)
+                      Positioned(
                       right: 12,
                       top: 12,
                       child: RoundIconButton(
@@ -238,7 +243,7 @@ class _KecrekanStageState extends State<KecrekanStage> {
                         },
                       ),
                     ),
-                    if (controller.ready)
+                    if (widget.showHintOverlay && controller.ready)
                       Positioned(
                         left: 14,
                         right: 64,
