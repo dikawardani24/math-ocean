@@ -6,14 +6,14 @@
 class KecrekanMath {
   static const int rodCount = 5;
   static const int beadsPerRod = 5;
-  // Exactly five bead slots fit on each side of the counting gap.  Keeping the
+  // Five bead centres are spaced exactly one bead diameter apart on each side of the counting gap.  Keeping the
   // travel span equal to `5 * spacing` means one counted bead moves exactly
   // one slot, matching one bead-width of finger travel.  A wider span left a
   // 2.27-slot hole between the groups: a single count flung a bead across that
   // hole and a natural drag over-counted by three or four beads.
-  static const double leftX = -0.95;
-  static const double rightX = 0.95;
-  static const double spacing = 0.38;
+  static const double leftX = -0.675;
+  static const double rightX = 0.675;
+  static const double spacing = 0.27;
 
   /// Minimum visible rows needed to represent a challenge's starting and
   /// ending values. A subtraction task must fit its starting value even when
