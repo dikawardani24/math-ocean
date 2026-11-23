@@ -216,7 +216,8 @@ class KecrekanController extends ChangeNotifier {
     if (bead == null) return null;
     final oldTotal = total;
     final target = (pointerWorldX + _dragOffset)
-        .clamp(KecrekanMath.leftX, KecrekanMath.rightX);
+        .clamp(KecrekanMath.leftX, KecrekanMath.rightX)
+        .toDouble();
     _moveWithContact(bead, target);
     _syncRowCount(bead.rod);
     _writeRodNodes(bead.rod);
@@ -230,9 +231,8 @@ class KecrekanController extends ChangeNotifier {
   /// boundary. Neighbours move only if the selected bead physically contacts
   /// them while travelling there.
   int toggleBead(KecrekanBead bead) {
-    final destination = _isCounted(bead)
-        ? KecrekanMath.rightX
-        : KecrekanMath.leftX;
+    final threshold = _countingThreshold(bead);
+    final destination = threshold + (_isCounted(bead) ? 0.01 : -0.01);
     _moveWithContact(bead, destination);
     _syncRowCount(bead.rod);
     _writeRodNodes(bead.rod);
@@ -247,10 +247,9 @@ class KecrekanController extends ChangeNotifier {
     if (selectedIndex < 0) return;
 
     final oldX = selected.x;
-    selected.x = requestedX.clamp(
-      KecrekanMath.leftX,
-      KecrekanMath.rightX,
-    );
+    selected.x = requestedX
+        .clamp(KecrekanMath.leftX, KecrekanMath.rightX)
+        .toDouble();
     selected.velocity = 0;
 
     if (selected.x < oldX) {
@@ -292,11 +291,13 @@ class KecrekanController extends ChangeNotifier {
     }
 
     for (final bead in row) {
-      bead.x = bead.x.clamp(KecrekanMath.leftX, KecrekanMath.rightX);
+      bead.x = bead.x
+          .clamp(KecrekanMath.leftX, KecrekanMath.rightX)
+          .toDouble();
     }
   }
 
-  bool _isCounted(KecrekanBead bead) {
+  double _countingThreshold(KecrekanBead bead) {
     // Each bead has two packed resting positions. Their midpoint is its
     // crossing threshold; a fixed world-X threshold would miscount beads
     // because an untouched ten-bead group spans across the frame's origin.
@@ -305,8 +306,11 @@ class KecrekanController extends ChangeNotifier {
             KecrekanMath.spacing;
     final rightRest = KecrekanMath.rightX -
         bead.index * KecrekanMath.spacing;
-    return bead.x < (leftRest + rightRest) / 2;
+    return (leftRest + rightRest) / 2;
   }
+
+  bool _isCounted(KecrekanBead bead) =>
+      bead.x < _countingThreshold(bead);
 
   void _syncRowCount(int rod) {
     final count = beads
