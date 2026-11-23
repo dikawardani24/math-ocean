@@ -61,15 +61,26 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
         intensity: 1.25,
       );
 
-      // The Blender scene is authored as a wide landscape diorama. Do not
-      // frame its full bounding box: on a portrait phone that makes the reef
-      // look like a small object floating in the middle of the screen.
-      // Instead, use a close, fixed portrait camera aimed at the central reef.
-      _camera = PerspectiveCamera(
-        position: vm.Vector3(0, 5.4, 8.8),
-        target: vm.Vector3(0, 2.0, 0),
-        fovRadiansY: 43 * math.pi / 180,
-      );
+      // Keep the known-visible GLB orientation. The fixed portrait camera
+      // guessed the exported coordinate axes incorrectly and looked away
+      // from the reef. Frame the imported model first; portrait viewport
+      // projection is then applied by SceneView itself.
+      final bounds = model.combinedWorldBounds;
+      if (bounds != null) {
+        _camera = PerspectiveCamera.framing(
+          bounds,
+          direction: vm.Vector3(0, -0.16, -1),
+          fovRadiansY: 54 * math.pi / 180,
+          margin: 0.78,
+        );
+      } else {
+        // This fallback preserves the GLB's known viewing direction.
+        _camera = PerspectiveCamera(
+          position: vm.Vector3(0, 7, -18),
+          target: vm.Vector3(0, 1, 0),
+          fovRadiansY: 54 * math.pi / 180,
+        );
+      }
 
       if (mounted) setState(() => _loaded = true);
     } catch (error, stack) {
