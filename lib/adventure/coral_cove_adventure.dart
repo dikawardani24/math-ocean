@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -367,13 +366,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
               if (_step == _CoralStep.greeting) {
                 Navigator.of(context).pop();
               } else if (_step == _CoralStep.counting) {
+                _kecrekan.reset();
                 setState(() => _step = _CoralStep.greeting);
-              } else if (_step == _CoralStep.collecting) {
-                setState(() => _step = _CoralStep.counting);
-              } else if (_step == _CoralStep.feeding) {
-                setState(() => _step = _CoralStep.collecting);
               } else {
-                Navigator.of(context).pop(true);
+                // Do not return to a completed collection step: that would
+                // leave the child with an empty reef and no way forward.
+                Navigator.of(context).pop(_recorded);
               }
             },
           ),
