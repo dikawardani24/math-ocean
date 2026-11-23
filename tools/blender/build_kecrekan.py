@@ -33,14 +33,14 @@ POC_DIR = os.path.join(ASSET_DIR, "poc")
 # visibility/layout shows only the number of rows required by each challenge.
 ROD_COUNT = 5
 BEADS_PER_ROD = 5
-BEAD_SPACING = 0.38
+BEAD_SPACING = 0.27
 BEAD_RADIUS = 0.15
 BEAD_X_SCALE = 0.90
-ROD_LENGTH = 2.35
-ROD_X = 1.175
+ROD_LENGTH = 1.80
+ROD_X = 0.90
 ROW_Z = [-1.04 + i * 0.52 for i in range(ROD_COUNT)]
-BEAD_LEFT = -0.95
-BEAD_RIGHT = 0.95
+BEAD_LEFT = -0.675
+BEAD_RIGHT = 0.675
 BEAD_COLORS = [
     ("Turquoise", (0.10, 0.78, 0.82, 1.0), (0.48, 0.96, 0.94, 1.0)),
     ("Coral", (0.95, 0.30, 0.42, 1.0), (1.0, 0.62, 0.68, 1.0)),
@@ -213,16 +213,16 @@ def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | N
     # Four substantial rounded rails. No face, ears, wings, stickers or side
     # ornaments: keep the silhouette readable and leave the full width for play.
     parts = [
-        cube("Frame_TopRail", (0.0, 0.0, 1.55), (2.53, 0.38, 0.18), mats["glass"], col, bevel=0.075),
+        cube("Frame_TopRail", (0.0, 0.0, 1.55), (1.98, 0.38, 0.18), mats["glass"], col, bevel=0.075),
         cube("Frame_BottomRail", (0.0, 0.0, -1.55), (2.53, 0.38, 0.18), mats["glass"], col, bevel=0.075),
-        cube("Frame_LeftPost", (-1.175, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
-        cube("Frame_RightPost", (1.175, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
+        cube("Frame_LeftPost", (-0.90, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
+        cube("Frame_RightPost", (0.90, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
     ]
 
     # A restrained warm-metal inner edge gives the frame a crafted finish
     # without creating another high-contrast border around every bead.
     parts.extend([
-        cube("Frame_TopAccent", (0.0, -0.198, 1.425), (2.17, 0.025, 0.025), mats["gold"], col, bevel=0.01),
+        cube("Frame_TopAccent", (0.0, -0.198, 1.425), (1.62, 0.025, 0.025), mats["gold"], col, bevel=0.01),
         cube("Frame_BottomAccent", (0.0, -0.198, -1.425), (2.17, 0.025, 0.025), mats["gold"], col, bevel=0.01),
     ])
 
