@@ -51,6 +51,8 @@ class KecrekanController extends ChangeNotifier {
   final Map<int, List<Node>> _rowNodes = {};
 
   PerspectiveCamera? _camera;
+  Node? _model;
+  double? _cameraAspectRatio;
   KecrekanBead? _draggedBead;
   double _dragOffset = 0;
 
@@ -65,6 +67,7 @@ class KecrekanController extends ChangeNotifier {
     try {
       await Scene.initializeStaticResources();
       final model = await loadScene(assetPath);
+      _model = model;
       _collectBeads(model);
       setActiveRowCount(activeRowCount, notify: false);
       _applyInitial(initialCount);
@@ -75,22 +78,8 @@ class KecrekanController extends ChangeNotifier {
         color: vm.Vector3(1.0, 0.96, 0.9),
         intensity: 2.0,
       );
-      final bounds = model.combinedWorldBounds;
-      _camera = bounds == null
-          ? PerspectiveCamera(
-              position: vm.Vector3(0, 0.05, -7.4),
-              target: vm.Vector3(0, 0.02, 0),
-              fovRadiansY: 36 * dm.pi / 180,
-            )
-          : PerspectiveCamera.framing(
-              bounds,
-              direction: vm.Vector3(0, 0, -1),
-              // The default framing left too much empty space around the
-              // toy. A tighter fit makes the frame and individual beads
-              // substantially easier for small hands and young eyes to see.
-              fovRadiansY: 34 * dm.pi / 180,
-              margin: 0.9,
-            );
+      _updateCameraForAspectRatio(0.72);
+
       ready = true;
       notifyListeners();
     } catch (exception, stack) {
@@ -99,6 +88,39 @@ class KecrekanController extends ChangeNotifier {
       notifyListeners();
     }
     return null;
+  }
+
+  /// Portrait viewports have a much narrower horizontal field of view than
+  /// the vertical framing helper assumes. Pull the camera back according to
+  /// the actual SceneView aspect ratio so the complete frame stays visible.
+  void updateCameraForViewport(Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+    final aspectRatio = size.width / size.height;
+    if (_cameraAspectRatio != null &&
+        (_cameraAspectRatio! - aspectRatio).abs() < 0.015) {
+      return;
+    }
+    _updateCameraForAspectRatio(aspectRatio);
+  }
+
+  void _updateCameraForAspectRatio(double aspectRatio) {
+    final model = _model;
+    final bounds = model?.combinedWorldBounds;
+    _cameraAspectRatio = aspectRatio;
+    _camera = bounds == null
+        ? PerspectiveCamera(
+            position: vm.Vector3(0, 0.05, -7.4),
+            target: vm.Vector3(0, 0.02, 0),
+            fovRadiansY: 36 * dm.pi / 180,
+          )
+        : PerspectiveCamera.framing(
+            bounds,
+            direction: vm.Vector3(0, 0, -1),
+            fovRadiansY: 34 * dm.pi / 180,
+            // The framing helper fits a bounding sphere against vertical FOV.
+            // A 0.7 portrait viewport needs about 1.4x more horizontal room.
+            margin: aspectRatio < 1 ? (1 / aspectRatio).clamp(1.0, 1.65) : 1.08,
+          );
   }
 
   void _collectBeads(Node node) {
