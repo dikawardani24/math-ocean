@@ -14,6 +14,7 @@ import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
 import '../widgets/coral_cove_3d_backdrop.dart';
 import '../widgets/turtle_3d_companion.dart';
+import '../widgets/turtle_companion.dart' show SpeechBubble;
 import '../widgets/ui_kit.dart';
 
 
