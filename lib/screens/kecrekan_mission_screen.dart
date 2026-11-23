@@ -72,8 +72,8 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
   /// Rows are based on the largest number visible in the task, not a fixed
   /// board size. Subtraction needs enough room for its starting value.
   int _rowsForChallenge(int start, int target) {
-    final capacity = math.max(start, target).clamp(1, 25);
-    return ((capacity + 4) ~/ 5).clamp(1, 5);
+    final capacity = math.max(start, target).clamp(1, 25).toInt();
+    return ((capacity + 4) ~/ 5).clamp(1, 5).toInt();
   }
 
   void _speak() {
