@@ -415,7 +415,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       0.0,
       constraints.maxHeight - reservedBottom,
     );
-    final maxTop = math.max(0.0, playfieldHeight - itemSize);
+    final maxTop = math.max(0.0, playfieldHeight - itemSize).toDouble();
     final positions = [
       const Offset(0.16, 0.12),
       const Offset(0.76, 0.08),
@@ -429,8 +429,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       if (_collectedSnacks.contains(i)) continue;
       final pos = positions[i % positions.length];
       final left = (constraints.maxWidth * pos.dx - itemSize / 2)
-          .clamp(8.0, math.max(8.0, constraints.maxWidth - itemSize - 8));
-      final top = (maxTop * pos.dy).clamp(0.0, maxTop);
+          .clamp(8.0, math.max(8.0, constraints.maxWidth - itemSize - 8))\n          .toDouble();
+      final top = (maxTop * pos.dy).clamp(0.0, maxTop).toDouble();
       widgets.add(
         Positioned(
           left: left,
