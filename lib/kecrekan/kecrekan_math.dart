@@ -4,16 +4,16 @@
 /// position is derived from [rodCounts], so the number on screen and the number
 /// the child built can never disagree.
 class KecrekanMath {
-  static const int rodCount = 10;
-  static const int beadsPerRod = 10;
-  // Exactly ten bead slots fit between the two packing stops.  Keeping the
-  // travel span equal to `10 * spacing` means one counted bead moves exactly
+  static const int rodCount = 5;
+  static const int beadsPerRod = 5;
+  // Exactly five bead slots fit on each side of the counting gap.  Keeping the
+  // travel span equal to `5 * spacing` means one counted bead moves exactly
   // one slot, matching one bead-width of finger travel.  A wider span left a
   // 2.27-slot hole between the groups: a single count flung a bead across that
   // hole and a natural drag over-counted by three or four beads.
-  static const double leftX = -1.10;
-  static const double rightX = 1.10;
-  static const double spacing = 0.22;
+  static const double leftX = -0.95;
+  static const double rightX = 0.95;
+  static const double spacing = 0.38;
 
   final List<int> rodCounts = List<int>.filled(rodCount, 0);
 
@@ -52,7 +52,7 @@ class KecrekanMath {
   /// end, index 9 at the screen-left end. Counted beads pack against the left
   /// side of the frame; the rest pack against the right. Exactly one empty
   /// slot separates the groups, and the five-bead marker sits in that slot at
-  /// a five/five split.
+  /// a five-bead row.
   static double beadX(int index, int count) {
     if (index >= beadsPerRod - count) {
       // Counted: highest indices sit furthest screen-left.
