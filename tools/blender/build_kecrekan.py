@@ -29,17 +29,18 @@ ASSET_DIR = os.path.join(ROOT, "assets", "3d", "kecrekan")
 POC_DIR = os.path.join(ASSET_DIR, "poc")
 
 # Layout contract shared with src/kecrekan/layout.js
-# The instrument uses a quiet rectangular frame and ten rows of ten tactile beads.
-ROD_COUNT = 10
-BEADS_PER_ROD = 10
-BEAD_SPACING = 0.22
-BEAD_RADIUS = 0.105
-BEAD_X_SCALE = 0.82
+# The instrument has five rows of five oversized tactile beads. Runtime
+# visibility/layout shows only the number of rows required by each challenge.
+ROD_COUNT = 5
+BEADS_PER_ROD = 5
+BEAD_SPACING = 0.38
+BEAD_RADIUS = 0.15
+BEAD_X_SCALE = 0.90
 ROD_LENGTH = 2.70
 ROD_X = 1.35
-ROW_Z = [-1.28 + i * 0.285 for i in range(ROD_COUNT)]
-BEAD_LEFT = -1.10
-BEAD_RIGHT = 1.10
+ROW_Z = [-1.04 + i * 0.52 for i in range(ROD_COUNT)]
+BEAD_LEFT = -0.95
+BEAD_RIGHT = 0.95
 BEAD_COLORS = [
     ("Turquoise", (0.10, 0.78, 0.82, 1.0), (0.48, 0.96, 0.94, 1.0)),
     ("Coral", (0.95, 0.30, 0.42, 1.0), (1.0, 0.62, 0.68, 1.0)),
@@ -226,7 +227,7 @@ def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | N
     ])
 
     root["asset"] = "math-ocean-kecrekan"
-    root["version"] = "3.0-clean-frame"
+    root["version"] = "4.0-five-by-five-adaptive"
     root["beads_per_rod"] = BEADS_PER_ROD
     root["rod_count"] = ROD_COUNT
     root["bead_spacing"] = BEAD_SPACING
@@ -319,7 +320,7 @@ def make_bead_mesh(name: str, mat: bpy.types.Material, band_mat: bpy.types.Mater
 def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) -> None:
     col = collection("Kecrekan_Beads")
     # Ten shared meshes: five colours, each with a deep first-five and a light
-    # second-five shade.  Every bead is still an independent glTF node.
+    # second-five shade. Every bead remains an independent glTF node.
     meshes: dict[tuple[int, bool], bpy.types.Mesh] = {}
     for color_index, (name, _deep, _light) in enumerate(BEAD_COLORS):
         for is_deep in (True, False):
@@ -468,7 +469,7 @@ def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bp
     root = bpy.data.objects.new("KecrekanPOC_Root", None)
     collection("POC_Root").objects.link(root)
     root["asset"] = "math-rings-kecrekan-poc"
-    root["beads_per_rod"] = 10
+    root["beads_per_rod"] = BEADS_PER_ROD
 
     left = cube("POC_LeftPost", (-1.45, 0.0, 0.0), (0.16, 0.28, 0.60), mats["glass"], col)
     right = cube("POC_RightPost", (1.45, 0.0, 0.0), (0.16, 0.28, 0.60), mats["glass"], col)
@@ -495,7 +496,7 @@ def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bp
     for obj in list(bpy.context.scene.objects):
         if obj.name in {"POC_BeadMesh_Coral", "POC_BeadMesh_Gold"}:
             bpy.data.objects.remove(obj, do_unlink=True)
-    for i in range(10):
+    for i in range(BEADS_PER_ROD):
         x = BEAD_RIGHT - i * BEAD_SPACING
         bead = bpy.data.objects.new(f"POC_Bead_R0_{i:02d}", coral_mesh if i < 5 else gold_mesh)
         bead.location = (x, 0.0, 0.0)
