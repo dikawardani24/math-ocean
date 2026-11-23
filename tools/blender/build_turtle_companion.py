@@ -115,12 +115,60 @@ for side, x in (("L", -.30), ("R", .30)):
     parent_to(root, uv("Tala_Pupil_" + side, (x * 1.02, -1.681, .37), (.092, .052, .125), pupil))
     parent_to(root, uv("Tala_EyeSparkle_" + side, (x * 1.02 - .035, -1.727, .425), (.035, .022, .045), shine, 20, 12))
     parent_to(root, uv("Tala_Cheek_" + side, (x * 1.48, -1.55, .08), (.105, .045, .065), cheek, 20, 12))
-# Two tiny nostrils and a soft smile line.
+# A small, soft sea-turtle beak instead of a floating oval mouth.
+# The upper beak blends into the face; a curved dark seam gives it a readable,
+# friendly expression without making the turtle look like a human cartoon.
+beak = parent_to(root, uv(
+    "Tala_Upper_Beak",
+    (0, -1.665, .015),
+    (.205, .095, .105),
+    skin_light,
+    32,
+    20,
+))
+# Lower jaw is a separate part so the eating clip can visibly open and close it.
+jaw = parent_to(root, uv(
+    "Tala_Lower_Jaw",
+    (0, -1.575, -.105),
+    (.235, .125, .082),
+    skin,
+    32,
+    20,
+))
+# Follow the curved surface of the muzzle with a shallow U-shaped mouth seam.
+mouth_curve = bpy.data.curves.new("Tala_Smile_Seam_Curve", type="CURVE")
+mouth_curve.dimensions = "3D"
+mouth_curve.resolution_u = 16
+mouth_curve.bevel_depth = .014
+mouth_curve.bevel_resolution = 4
+spline = mouth_curve.splines.new("BEZIER")
+spline.bezier_points.add(4)
+smile_points = [
+    (-.205, -1.657, -.005),
+    (-.145, -1.687, -.052),
+    (0.0, -1.704, -.073),
+    (.145, -1.687, -.052),
+    (.205, -1.657, -.005),
+]
+for point, coordinate in zip(spline.bezier_points, smile_points):
+    point.co = coordinate
+    point.handle_left_type = "AUTO"
+    point.handle_right_type = "AUTO"
+smile = bpy.data.objects.new("Tala_Smile_Seam", mouth_curve)
+scene.collection.objects.link(smile)
+smile.data.materials.append(mouth_mat)
+parent_to(root, smile)
+
+# Two subtle nostrils sit above the beak, not inside the mouth.
 for x in (-.095, .095):
-    parent_to(root, uv("Tala_Nostril", (x, -1.704, .18), (.027, .018, .022), mouth_mat, 16, 10))
-# Jaw is a separate pivot-able object. Scaling it on Z makes a clear open/close bite.
-jaw = parent_to(root, uv("Tala_Lower_Jaw", (0, -1.54, -.10), (.36, .20, .12), skin))
-mouth = parent_to(root, uv("Tala_Mouth_Interior", (0, -1.63, -.015), (.20, .035, .035), mouth_mat, 20, 12))
+    parent_to(root, uv(
+        "Tala_Nostril",
+        (x, -1.704, .18),
+        (.022, .014, .018),
+        shell_edge,
+        16,
+        10,
+    ))
 
 # Small tail visible behind the shell.
 tail = parent_to(root, uv("Tala_Tail", (0, 1.02, -.02), (.19, .38, .13), skin))
@@ -159,8 +207,8 @@ for name, obj in flippers.items():
 set_action(head, "Idle_Swim", [(1, 0), (13, .035), (25, 0), (37, -.025), (49, 0)], "rotation_euler", 0)
 set_action(head, "Eat_Chew", [(1, 0), (5, .10), (10, -.06), (15, .10), (20, -.04), (25, 0)], "rotation_euler", 0)
 set_action(head, "Happy_Reaction", [(1, 0), (8, -.10), (16, .06), (24, 0), (32, -.03)], "rotation_euler", 0)
-set_action(jaw, "Eat_Chew", [(1, 1), (4, 1.65), (8, 1), (12, 1.65), (16, 1), (20, 1.65), (24, 1), (28, 1)], "scale", 2)
-set_action(jaw, "Happy_Reaction", [(1, 1), (8, 1.3), (16, 1), (24, 1.2), (32, 1)], "scale", 2)
+set_action(jaw, "Eat_Chew", [(1, -.105), (4, -.17), (8, -.105), (12, -.17), (16, -.105), (20, -.17), (24, -.105), (28, -.105)], "location", 2)
+set_action(jaw, "Happy_Reaction", [(1, -.105), (8, -.14), (16, -.105), (24, -.13), (32, -.105)], "location", 2)
 set_action(tail, "Idle_Swim", [(1, 0), (13, .12), (25, 0), (37, -.12), (49, 0)], "rotation_euler", 2)
 
 # Use NLA tracks as glTF animation clips. All mesh geometry remains shared by the
