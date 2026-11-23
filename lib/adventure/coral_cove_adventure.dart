@@ -118,6 +118,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     // basket item visible until the complete bite animation has finished.
     if (_step != _CoralStep.feeding ||
         _isEating ||
+        _biteFlying ||
+        _biteAtMouth ||
         _finishingFeed ||
         _fedGrass.contains(grassIndex)) {
       return;
@@ -361,6 +363,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             onWillAccept: (index) =>
                 index != null &&
                 !_isEating &&
+                !_biteFlying &&
+                !_biteAtMouth &&
                 !_finishingFeed &&
                 !_fedGrass.contains(index),
             onAccept: _feedOne,
@@ -494,7 +498,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     if (!_fedGrass.contains(i))
                       Draggable<int>(
                         data: i,
-                        maxSimultaneousDrags: (_isEating || _finishingFeed) ? 0 : 1,
+                        maxSimultaneousDrags: (_isEating || _biteFlying || _biteAtMouth || _finishingFeed) ? 0 : 1,
                         feedback: Material(
                           color: Colors.transparent,
                           child: _SeagrassToken(size: 62, lifted: true),
