@@ -17,7 +17,7 @@ class KecrekanStage extends StatefulWidget {
   const KecrekanStage({
     super.key,
     required this.controller,
-    this.hint = 'Tap a bead or drag to move several',
+    this.hint = 'Grab a bead and push its neighbours',
     this.interactive = true,
     this.onInteraction,
     this.showTotal = true,
@@ -82,7 +82,6 @@ class _KecrekanStageState extends State<KecrekanStage> {
   void _panDown(DragDownDetails details) {
     if (!widget.interactive) return;
     final bead = widget.controller.beadAt(details.localPosition, _size);
-    _downBead = bead;
     _downBead = bead;
   }
 
