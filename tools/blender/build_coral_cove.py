@@ -11,10 +11,12 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 OUT = os.path.join(ROOT, "assets/3d/coral_cove")
+ARTIFACTS = os.path.join(ROOT, "artifacts/blender/coral_cove")
 os.makedirs(OUT, exist_ok=True)
+os.makedirs(ARTIFACTS, exist_ok=True)
 GLB = os.path.join(OUT, "coral_cove_environment.glb")
-BLEND = os.path.join(OUT, "coral_cove_environment.blend")
-PREVIEW = os.path.join(OUT, "coral_cove_preview.png")
+BLEND = os.path.join(ARTIFACTS, "coral_cove_environment.blend")
+PREVIEW = os.path.join(ARTIFACTS, "coral_cove_preview.png")
 random.seed(23)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
