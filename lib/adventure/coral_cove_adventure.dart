@@ -109,6 +109,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   final Set<int> _fedGrass = {};
   int? _feedingGrassIndex;
   bool _isEating = false;
+  bool _biteFlying = false;
+  bool _biteAtMouth = false;
   bool _finishingFeed = false;
 
   void _feedOne(int grassIndex) {
@@ -123,18 +125,29 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
 
     setState(() {
       _feedingGrassIndex = grassIndex;
-      _isEating = true;
+      _biteFlying = true;
+      _biteAtMouth = false;
     });
     AudioService.instance.sfx('bead_slide');
 
-    Future<void>.delayed(const Duration(milliseconds: 1200), () {
+    // The grass visibly travels from the drop zone to Tala's mouth first.
+    Future<void>.delayed(const Duration(milliseconds: 480), () {
       if (!mounted || _step != _CoralStep.feeding) return;
-
       setState(() {
-        _fedGrass.add(grassIndex);
-        _feedingGrassIndex = null;
-        _isEating = false;
+        _biteFlying = false;
+        _biteAtMouth = true;
+        _isEating = true;
       });
+
+      // Keep the bite at her mouth while the jaw and flippers chew.
+      Future<void>.delayed(const Duration(milliseconds: 1150), () {
+        if (!mounted || _step != _CoralStep.feeding) return;
+        setState(() {
+          _fedGrass.add(grassIndex);
+          _feedingGrassIndex = null;
+          _biteAtMouth = false;
+          _isEating = false;
+        });
       Feel.success();
 
       if (_fedGrass.length == _target) {
@@ -149,6 +162,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             ? 'Crunch! That was tasty. One more piece, please!'
             : 'Crunch, crunch! That was tasty. $remaining more pieces!');
       }
+      });
     });
   }
 
@@ -365,11 +379,13 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     width: hovering ? 4 : 2,
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                     AnimatedScale(
-                      scale: hovering ? 1.12 : 1,
+                      scale: hovering ? 1.03 : 1,
                       duration: const Duration(milliseconds: 180),
                       child: Turtle3DCompanion(
                         size: 220,
@@ -412,6 +428,25 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                         fontSize: 18,
                       ),
                     ),
+                      ],
+                    ),
+                    if (_biteFlying || _biteAtMouth)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: AnimatedAlign(
+                            duration: Duration(milliseconds: _biteFlying ? 460 : 120),
+                            curve: Curves.easeInCubic,
+                            alignment: _biteFlying
+                                ? const Alignment(0, .82)
+                                : const Alignment(0, -.24),
+                            child: AnimatedScale(
+                              duration: const Duration(milliseconds: 220),
+                              scale: _biteAtMouth ? .48 : 1,
+                              child: _SeagrassToken(size: 54, lifted: true),
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               );
