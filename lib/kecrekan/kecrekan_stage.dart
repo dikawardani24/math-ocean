@@ -10,7 +10,7 @@ import 'kecrekan_controller.dart';
 
 /// The playable 3D counting frame.
 ///
-/// The imported GLB is the only thing drawn here: 100 independently
+/// The imported GLB is the only thing drawn here: up to 25 independently
 /// addressable bead nodes, a real camera, raycast picking and contact-based
 /// movement. No painted beads, no flattened fake.
 class KecrekanStage extends StatefulWidget {
