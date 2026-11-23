@@ -82,8 +82,8 @@ class KecrekanController extends ChangeNotifier {
               // The default framing left too much empty space around the
               // toy. A tighter fit makes the frame and individual beads
               // substantially easier for small hands and young eyes to see.
-              fovRadiansY: 32 * dm.pi / 180,
-              margin: 0.68,
+              fovRadiansY: 30 * dm.pi / 180,
+              margin: 0.64,
             );
       ready = true;
       notifyListeners();
