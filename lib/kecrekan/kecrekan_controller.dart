@@ -230,7 +230,7 @@ class KecrekanController extends ChangeNotifier {
   /// boundary. Neighbours move only if the selected bead physically contacts
   /// them while travelling there.
   int toggleBead(KecrekanBead bead) {
-    final destination = bead.x < 0
+    final destination = _isCounted(bead)
         ? KecrekanMath.rightX
         : KecrekanMath.leftX;
     _moveWithContact(bead, destination);
@@ -296,9 +296,21 @@ class KecrekanController extends ChangeNotifier {
     }
   }
 
+  bool _isCounted(KecrekanBead bead) {
+    // Each bead has two packed resting positions. Their midpoint is its
+    // crossing threshold; a fixed world-X threshold would miscount beads
+    // because an untouched ten-bead group spans across the frame's origin.
+    final leftRest = KecrekanMath.leftX +
+        (KecrekanMath.beadsPerRod - 1 - bead.index) *
+            KecrekanMath.spacing;
+    final rightRest = KecrekanMath.rightX -
+        bead.index * KecrekanMath.spacing;
+    return bead.x < (leftRest + rightRest) / 2;
+  }
+
   void _syncRowCount(int rod) {
     final count = beads
-        .where((bead) => bead.rod == rod && bead.x < 0)
+        .where((bead) => bead.rod == rod && _isCounted(bead))
         .length;
     math.setCount(rod, count);
   }
