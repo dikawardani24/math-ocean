@@ -56,16 +56,14 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _openStation(StationKind kind) async {
     AudioService.instance.sfx('whoosh');
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => StationScreen(kind: kind)),
-    );
+    await Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => StationScreen(kind: kind)));
   }
 
   Future<void> _openRewards() async {
     AudioService.instance.sfx('whoosh');
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RewardsScreen()),
-    );
+    await Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const RewardsScreen()));
   }
 
   @override
@@ -84,9 +82,7 @@ class _HomeScreenState extends State<HomeScreen>
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-                    sliver: SliverToBoxAdapter(
-                      child: _TopBar(wide: wide),
-                    ),
+                    sliver: SliverToBoxAdapter(child: _TopBar(wide: wide)),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
@@ -106,9 +102,7 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           Text(
                             'The reef map',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
+                            style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   color: OceanColors.foam,
                                   fontWeight: FontWeight.w800,
@@ -146,7 +140,8 @@ class _HomeScreenState extends State<HomeScreen>
                         return AnimatedBuilder(
                           animation: _bob,
                           builder: (context, child) {
-                            final y = math.sin(
+                            final y =
+                                math.sin(
                                   _bob.value * math.pi * 2 + index * 1.15,
                                 ) *
                                 2.2;
@@ -214,14 +209,14 @@ class _TopBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: OceanColors.shell,
-                      fontSize: wide ? 31 : 26,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
-                      shadows: const [
-                        Shadow(color: Color(0x66000000), blurRadius: 10),
-                      ],
-                    ),
+                  color: OceanColors.shell,
+                  fontSize: wide ? 31 : 26,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                  shadows: const [
+                    Shadow(color: Color(0x66000000), blurRadius: 10),
+                  ],
+                ),
               ),
               Text(
                 'OCEAN NUMBERLAND',
@@ -245,11 +240,7 @@ class _TopBar extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            OceanPill(
-              label: '${progress.pearls}',
-              emoji: '💧',
-              compact: true,
-            ),
+            OceanPill(label: '${progress.pearls}', emoji: '💧', compact: true),
             const SizedBox(height: 5),
             OceanPill(
               label: '${progress.totalStars}',
@@ -361,9 +352,7 @@ class _StationCard extends StatelessWidget {
                               kind.stationName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: OceanColors.ink,
                                     fontWeight: FontWeight.w800,
@@ -391,11 +380,11 @@ class _StationCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: OceanColors.inkSoft,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                              height: 1.1,
-                            ),
+                          color: OceanColors.inkSoft,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          height: 1.1,
+                        ),
                       ),
                       const SizedBox(height: 7),
                       Row(
@@ -407,9 +396,7 @@ class _StationCard extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               '$stars/$maxStars',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: OceanColors.inkSoft,
                                     fontWeight: FontWeight.w700,
@@ -478,10 +465,10 @@ class _MasteryPips extends StatelessWidget {
         Text(
           progress.jarimatikaChallengeUnlocked ? 'Ready!' : '$done/4',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: OceanColors.inkSoft,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-              ),
+            color: OceanColors.inkSoft,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
         ),
       ],
     );
@@ -526,18 +513,18 @@ class _ChestCard extends StatelessWidget {
                     Text(
                       'Treasure Grotto',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 19,
-                          ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 19,
+                      ),
                     ),
                     Text(
                       '${progress.treasureCount}/12 treasures · '
                       '${progress.pearls} pearls',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

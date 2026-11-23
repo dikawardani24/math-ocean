@@ -73,7 +73,11 @@ class _TurtleCompanionState extends State<TurtleCompanion>
 }
 
 class _TurtlePainter extends CustomPainter {
-  _TurtlePainter({required this.t, required this.blink, required this.cheering});
+  _TurtlePainter({
+    required this.t,
+    required this.blink,
+    required this.cheering,
+  });
 
   final double t;
   final double blink;
@@ -309,7 +313,11 @@ class _TurtlePainter extends CustomPainter {
     );
   }
 
-  void _frontFlipper(Canvas canvas, {required bool left, required double wave}) {
+  void _frontFlipper(
+    Canvas canvas, {
+    required bool left,
+    required double wave,
+  }) {
     final angle = (left ? -1 : 1) * (0.32 + wave * 0.16);
     final pivot = left ? const Offset(64, 104) : const Offset(132, 108);
     canvas.save();
@@ -317,18 +325,8 @@ class _TurtlePainter extends CustomPainter {
     canvas.rotate(angle);
     final path = Path()
       ..moveTo(0, -8)
-      ..quadraticBezierTo(
-        left ? -34 : 34,
-        -2,
-        left ? -50 : 50,
-        18,
-      )
-      ..quadraticBezierTo(
-        left ? -28 : 28,
-        26,
-        0,
-        12,
-      )
+      ..quadraticBezierTo(left ? -34 : 34, -2, left ? -50 : 50, 18)
+      ..quadraticBezierTo(left ? -28 : 28, 26, 0, 12)
       ..close();
     canvas.drawPath(path, Paint()..color = _skin);
     canvas.drawPath(
@@ -349,18 +347,8 @@ class _TurtlePainter extends CustomPainter {
     canvas.rotate(angle);
     final path = Path()
       ..moveTo(0, 0)
-      ..quadraticBezierTo(
-        left ? -24 : 24,
-        8,
-        left ? -34 : 34,
-        26,
-      )
-      ..quadraticBezierTo(
-        left ? -14 : 14,
-        26,
-        0,
-        10,
-      )
+      ..quadraticBezierTo(left ? -24 : 24, 8, left ? -34 : 34, 26)
+      ..quadraticBezierTo(left ? -14 : 14, 26, 0, 10)
       ..close();
     canvas.drawPath(path, Paint()..color = _shellMid);
     canvas.drawPath(
@@ -420,11 +408,7 @@ class TurtleTalk extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Flexible(
-          child: SpeechBubble(
-            message: message,
-            tailOnLeft: true,
-            onTap: onTap,
-          ),
+          child: SpeechBubble(message: message, tailOnLeft: true, onTap: onTap),
         ),
       ],
     );
@@ -466,10 +450,10 @@ class SpeechBubble extends StatelessWidget {
         child: Text(
           message,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: OceanColors.ink,
-                fontWeight: FontWeight.w700,
-                height: 1.25,
-              ),
+            color: OceanColors.ink,
+            fontWeight: FontWeight.w700,
+            height: 1.25,
+          ),
         ),
       ),
     );

@@ -43,7 +43,9 @@ class RoundIconButton extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: oceanShadow(blur: 12, y: 4),
       ),
-      child: tooltip == null ? button : Tooltip(message: tooltip!, child: button),
+      child: tooltip == null
+          ? button
+          : Tooltip(message: tooltip!, child: button),
     );
   }
 }
@@ -76,7 +78,10 @@ class OceanPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
         boxShadow: oceanShadow(blur: 10, y: 3),
       ),
       child: Row(
@@ -84,15 +89,16 @@ class OceanPill extends StatelessWidget {
         children: [
           if (emoji != null)
             Text(emoji!, style: TextStyle(fontSize: compact ? 14 : 16)),
-          if (icon != null) Icon(icon, size: compact ? 15 : 17, color: foreground),
+          if (icon != null)
+            Icon(icon, size: compact ? 15 : 17, color: foreground),
           if (emoji != null || icon != null) const SizedBox(width: 5),
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: foreground,
-                  fontSize: compact ? 12.5 : 14,
-                  height: 1.1,
-                ),
+              color: foreground,
+              fontSize: compact ? 12.5 : 14,
+              height: 1.1,
+            ),
           ),
         ],
       ),
@@ -186,10 +192,10 @@ class _BigButtonState extends State<BigButton> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: widget.textColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                        ),
+                      color: widget.textColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -368,9 +374,12 @@ class _BurstPainter extends CustomPainter {
       if (p <= 0) continue;
       final ease = Curves.easeOutCubic.transform(p);
       final gravity = p * p * size.height * 0.22;
-      final pos = origin +
-          Offset(spark.dx * size.width * 0.6 * ease,
-              spark.dy * size.height * 0.5 * ease + gravity);
+      final pos =
+          origin +
+          Offset(
+            spark.dx * size.width * 0.6 * ease,
+            spark.dy * size.height * 0.5 * ease + gravity,
+          );
       final alpha = (1 - p).clamp(0.0, 1.0);
       final paint = Paint()..color = spark.color.withValues(alpha: alpha);
       if (spark.star) {
@@ -440,12 +449,12 @@ class OceanHeader extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: OceanColors.shell,
-                      fontSize: 26,
-                      shadows: const [
-                        Shadow(color: Color(0x66000000), blurRadius: 8),
-                      ],
-                    ),
+                  color: OceanColors.shell,
+                  fontSize: 26,
+                  shadows: const [
+                    Shadow(color: Color(0x66000000), blurRadius: 8),
+                  ],
+                ),
               ),
               if (subtitle != null)
                 Text(
@@ -453,9 +462,9 @@ class OceanHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: OceanColors.mint.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: OceanColors.mint.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
             ],
           ),

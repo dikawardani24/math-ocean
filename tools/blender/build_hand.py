@@ -32,27 +32,65 @@ ASSET_DIR = os.path.join(ROOT, "assets", "3d", "hand")
 PREVIEW_DIR = os.path.join(ROOT, "evidence-out", "hand")
 
 # Palm and finger measurements in hand units.  The palm runs from the wrist
-# crease (z = 0) to the knuckles (z = 1); the middle fingertip reaches z = 1.86.
-# Proportions follow a relaxed adult right hand: broad knuckles, a strong
-# thenar mass, tapered fingers and a thumb that sits forward of the palm.
+# crease (z = 0) to the knuckles (z ~ 0.95); the middle fingertip reaches
+# z ~ 1.87.  Proportions follow a relaxed adult right hand: the palm is about
+# 1.2 middle-finger lengths, fingers are roughly four times longer than they
+# are wide, the index/middle/ring tips form a gentle arc, and the little
+# finger is noticeably shorter and thinner.  The thumb is abducted about 40
+# degrees with a real web space, so it reads as a thumb rather than a fifth
+# finger.
 FINGERS = [
     # name, base x, tip x, length, base radius, knuckle z
-    ("index", 0.300, 0.345, 0.700, 0.104, 1.000),
-    ("middle", 0.100, 0.112, 0.790, 0.108, 1.012),
-    ("ring", -0.100, -0.132, 0.735, 0.102, 1.000),
-    ("pinky", -0.292, -0.350, 0.585, 0.088, 0.962),
+    ("index", 0.282, 0.330, 0.820, 0.089, 0.948),
+    ("middle", 0.094, 0.110, 0.900, 0.092, 0.962),
+    ("ring", -0.094, -0.132, 0.850, 0.087, 0.948),
+    ("pinky", -0.272, -0.325, 0.685, 0.075, 0.922),
 ]
 FINGERS_BY_NAME = {f[0]: f for f in FINGERS}
 
 # Thumb chain: carpal root, metacarpal head, proximal phalanx, distal phalanx.
+# The metacarpal is buried in the thenar mass; the visible thumb leaves the
+# palm at the web, angles about 30 degrees from vertical and stops just below
+# the index knuckle.  A thumb that reaches as far as the fingers, or sits out
+# at 45 degrees like a fifth finger, is what made the old model read as a mitt.
 THUMB_POINTS = [
-    Vector((0.050, 0.020, 0.330)),
-    Vector((0.235, 0.045, 0.430)),
-    Vector((0.405, 0.075, 0.540)),
-    Vector((0.525, 0.100, 0.625)),
-    Vector((0.585, 0.112, 0.680)),
+    Vector((0.150, 0.032, 0.150)),
+    Vector((0.300, 0.062, 0.360)),
+    Vector((0.415, 0.082, 0.560)),
+    Vector((0.492, 0.096, 0.780)),
+    Vector((0.535, 0.104, 0.915)),
 ]
 FINGER_JOINTS = (0.0, 0.42, 0.73, 1.0)
+
+# Palmar flexion creases, in the XZ plane.  They are carved into the geometry
+# and also painted slightly darker, which is what makes them read as creases
+# rather than as smudges on a smooth surface.
+PALM_LINES = [
+    # life line, around the thenar pad
+    [Vector((0.300, 0.0, 0.560)), Vector((0.240, 0.0, 0.440)),
+     Vector((0.140, 0.0, 0.300)), Vector((0.030, 0.0, 0.180)),
+     Vector((0.000, 0.0, 0.105))],
+    # head line, across the palm
+    [Vector((-0.310, 0.0, 0.660)), Vector((-0.100, 0.0, 0.620)),
+     Vector((0.120, 0.0, 0.585)), Vector((0.310, 0.0, 0.545))],
+    # heart line, below the fingers
+    [Vector((-0.280, 0.0, 0.845)), Vector((-0.060, 0.0, 0.795)),
+     Vector((0.140, 0.0, 0.755)), Vector((0.330, 0.0, 0.690))],
+    # wrist crease
+    [Vector((-0.220, 0.0, 0.025)), Vector((-0.060, 0.0, 0.005)),
+     Vector((0.060, 0.0, 0.005)), Vector((0.220, 0.0, 0.025))],
+]
+
+
+def thumb_radius(t: float) -> float:
+    """Radius of the thumb chain: broad at the CMC, slim at the tip."""
+    radius = 0.150 - 0.060 * t
+    # Metacarpophalangeal and interphalangeal swellings.
+    radius += 0.010 * math.exp(-(((t - 0.22) / 0.14) ** 2))
+    radius += 0.006 * math.exp(-(((t - 0.60) / 0.10) ** 2))
+    # The distal tuft is broad and rounded, not a pointed sausage.
+    radius += 0.010 * math.exp(-(((t - 0.94) / 0.07) ** 2))
+    return radius
 
 
 def reset_scene() -> None:
@@ -83,12 +121,12 @@ def move_to_collection(obj: bpy.types.Object, col: bpy.types.Collection) -> None
 
 def finger_base(name: str) -> Vector:
     _, base_x, _, _, _, knuckle_z = FINGERS_BY_NAME[name]
-    return Vector((base_x, -0.010, knuckle_z))
+    return Vector((base_x, -0.004, knuckle_z))
 
 
 def finger_tip(name: str) -> Vector:
     _, _, tip_x, length, _, knuckle_z = FINGERS_BY_NAME[name]
-    return Vector((tip_x, 0.010, knuckle_z + length))
+    return Vector((tip_x, 0.004, knuckle_z + length))
 
 
 def finger_point(name: str, t: float) -> Vector:
@@ -96,17 +134,22 @@ def finger_point(name: str, t: float) -> Vector:
     base = finger_base(name)
     tip = finger_tip(name)
     length = (tip.z - base.z)
-    fan = (tip.x - base.x) * (t ** 1.45)
-    bow = (0.020 * math.sin(math.pi * t) + 0.026 * t * t) * length
+    fan = (tip.x - base.x) * (t ** 1.5)
+    # A relaxed finger is not a ruler: it bows very slightly toward the palm
+    # and drops a touch at the tip.  Kept subtle so an extended Jarimatika
+    # finger still reads as straight.
+    bow = (0.010 * math.sin(math.pi * t) + 0.012 * t * t) * length
     return Vector((base.x + fan, base.y + bow, base.z + length * t))
 
 
 def finger_radius(name: str, t: float) -> float:
     _, _, _, length, base_radius, _ = FINGERS_BY_NAME[name]
-    radius = base_radius * (1.0 - 0.26 * t)
-    # Knuckle, PIP and DIP are slightly wider than the shafts between them.
-    for joint, swell in ((0.0, 0.005), (0.42, 0.0065), (0.73, 0.0045)):
-        radius += swell * math.exp(-(((t - joint) / 0.055) ** 2))
+    radius = base_radius * (1.0 - 0.16 * t)
+    # Metacarpophalangeal, PIP and DIP joints are a little wider than the
+    # shafts between them.  The swell is small; the crease sculpt does the
+    # rest of the reading.
+    for joint, swell in ((0.0, 0.0035), (0.42, 0.0055), (0.73, 0.0040)):
+        radius += swell * math.exp(-(((t - joint) / 0.06) ** 2))
     return radius
 
 
@@ -186,38 +229,57 @@ def capsule_object(
 
 
 def palm_object() -> bpy.types.Object:
-    """Lofted palm: narrow wrist, broad knuckles, flattened superellipse."""
+    """Lofted palm with the thenar and hypothenar built into the surface.
+
+    The mounds are displaced into the loft instead of being separate
+    ellipsoids: a sphere stuck onto a flat slab unions into an obvious oval
+    lump, which is exactly what the previous hand looked like.  Here the
+    palmar surface swells continuously from the wrist to the knuckles.
+    """
     profile = [
-        # z, half width, half depth, centre y
-        (-0.345, 0.070, 0.050, 0.000),
-        (-0.330, 0.105, 0.062, 0.000),
-        (-0.305, 0.134, 0.069, 0.000),
-        (-0.270, 0.152, 0.074, 0.000),
-        (-0.220, 0.166, 0.079, 0.001),
-        (-0.130, 0.188, 0.089, 0.002),
-        (-0.050, 0.200, 0.098, 0.004),
-        (0.040, 0.212, 0.109, 0.007),
-        (0.150, 0.229, 0.122, 0.011),
-        (0.270, 0.252, 0.135, 0.015),
-        (0.390, 0.283, 0.145, 0.017),
-        (0.510, 0.318, 0.150, 0.017),
-        (0.630, 0.352, 0.149, 0.014),
-        (0.750, 0.392, 0.143, 0.009),
-        (0.865, 0.414, 0.135, 0.004),
-        (0.945, 0.418, 0.127, 0.000),
-        (1.005, 0.400, 0.117, -0.004),
+        # z, half width, half depth
+        (-0.470, 0.196, 0.048),
+        (-0.420, 0.212, 0.052),
+        (-0.340, 0.226, 0.056),
+        (-0.240, 0.242, 0.061),
+        (-0.140, 0.260, 0.067),
+        (-0.040, 0.282, 0.074),
+        (0.080, 0.310, 0.081),
+        (0.220, 0.342, 0.088),
+        (0.380, 0.370, 0.094),
+        (0.540, 0.390, 0.098),
+        (0.700, 0.401, 0.098),
+        (0.820, 0.401, 0.093),
+        (0.890, 0.394, 0.086),
+        (0.930, 0.382, 0.078),
+        (0.955, 0.366, 0.066),
     ]
-    sides = 48
+    sides = 64
     verts = []
     faces = []
-    exponent = 2.15
-    for z, rx, ry, cy in profile:
+    exponent = 2.2
+    for z, rx, ry in profile:
         for i in range(sides):
             a = 2 * math.pi * i / sides
             c, s = math.cos(a), math.sin(a)
             x = math.copysign(abs(c) ** (2 / exponent), c) * rx
             y = math.copysign(abs(s) ** (2 / exponent), s) * ry
-            verts.append(Vector((x, y + cy, z)))
+            if s > 0.0:
+                # Palmar surface only: thenar mound under the thumb, the
+                # hypothenar along the little-finger edge, and a shallow
+                # hollow down the middle where the palm cups.
+                thenar = 0.060 * math.exp(
+                    -(((x - 0.235) / 0.150) ** 2 + ((z - 0.330) / 0.255) ** 2)
+                )
+                hypothenar = 0.036 * math.exp(
+                    -(((x + 0.290) / 0.105) ** 2 + ((z - 0.295) / 0.235) ** 2)
+                )
+                hollow = 0.014 * math.exp(
+                    -(((x + 0.010) / 0.155) ** 2 + ((z - 0.480) / 0.220) ** 2)
+                )
+                fade = s ** 0.65
+                y += (thenar + hypothenar - hollow) * fade
+            verts.append(Vector((x, y, z)))
     for r in range(len(profile) - 1):
         a = r * sides
         b = (r + 1) * sides
@@ -225,9 +287,9 @@ def palm_object() -> bpy.types.Object:
             j = (i + 1) % sides
             faces.append((a + i, a + j, b + j, b + i))
     bottom = len(verts)
-    verts.append(Vector((0, 0, profile[0][0] - 0.035)))
+    verts.append(Vector((0, 0, profile[0][0] - 0.012)))
     top = len(verts)
-    verts.append(Vector((0, 0, profile[-1][0] + 0.01)))
+    verts.append(Vector((0, 0, profile[-1][0] + 0.008)))
     for i in range(sides):
         j = (i + 1) % sides
         faces.append((bottom, j, i))
@@ -260,7 +322,7 @@ def ellipsoid_object(
 
 
 def finger_object(name: str, label: str | None = None) -> bpy.types.Object:
-    samples = 26
+    samples = 36
     rings = []
     for i in range(samples):
         t = i / (samples - 1)
@@ -269,42 +331,20 @@ def finger_object(name: str, label: str | None = None) -> bpy.types.Object:
         direction = (finger_point(name, min(1.0, t + 0.02)) - finger_point(name, max(0.0, t - 0.02)))
         if direction.length < 1e-6:
             direction = Vector((0, 0, 1))
-        # Fingers are a little wider than they are deep.
-        rings.append((centre, radius, radius * 0.93, direction))
-    return tube_object(label or name, rings, sides=24)
+        # The palmar pad swells over the distal third of the finger; the
+        # dorsal side stays flatter, so the cross-section is not a sausage.
+        pad = 0.0100 * math.exp(-(((t - 0.88) / 0.14) ** 2))
+        centre = centre + Vector((0.0, pad * 0.52, 0.0))
+        # First radius is depth (palmar-dorsal), second is width.  Fingers are
+        # a little wider than they are deep and flatten toward the tip.
+        depth = radius * 0.88 + pad * 0.25
+        width = radius + pad * 0.12
+        rings.append((centre, depth, width, direction))
+    return tube_object(label or name, rings, sides=28)
 
 
 def build_hand_mesh() -> bpy.types.Object:
     parts = [palm_object()]
-
-    # Thenar eminence: the muscular mound at the base of the thumb.  It has to
-    # be a real volume, otherwise the thumb springs out of a flat paddle.
-    parts.append(
-        ellipsoid_object(
-            "Thenar", Vector((0.176, 0.086, 0.470)), Vector((0.158, 0.108, 0.235))
-        )
-    )
-    parts.append(
-        ellipsoid_object(
-            "ThenarCrest", Vector((0.270, 0.048, 0.520)), Vector((0.128, 0.094, 0.155))
-        )
-    )
-    parts.append(
-        ellipsoid_object(
-            "Hypothenar", Vector((-0.262, 0.052, 0.430)), Vector((0.112, 0.082, 0.238))
-        )
-    )
-    # Wrist heel, rounded off rather than chopped flat.
-    parts.append(
-        ellipsoid_object(
-            "WristPad", Vector((0.0, 0.008, -0.055)), Vector((0.205, 0.094, 0.098))
-        )
-    )
-    parts.append(
-        ellipsoid_object(
-            "WristEnd", Vector((0.0, 0.004, -0.300)), Vector((0.128, 0.070, 0.060))
-        )
-    )
 
     for name, base_x, tip_x, length, radius, knuckle_z in FINGERS:
         base = finger_base(name)
@@ -315,19 +355,31 @@ def build_hand_mesh() -> bpy.types.Object:
         parts.append(
             ellipsoid_object(
                 f"FingerTip_{name}",
-                tip - tip_dir * (tip_radius * 0.32),
-                Vector((tip_radius * 1.02, tip_radius * 0.96, tip_radius * 1.05)),
+                tip - tip_dir * (tip_radius * 0.34),
+                Vector((tip_radius * 1.00, tip_radius * 0.90, tip_radius * 0.96)),
             )
         )
-        # Metacarpophalangeal knuckle: a distinct dorsal dome.
+        # Fleshy fingertip pulp on the palmar side.  It has to sit proud of the
+        # tube surface: a pad buried inside the finger does nothing.
+        parts.append(
+            ellipsoid_object(
+                f"FingerPad_{name}",
+                finger_point(name, 0.93) + Vector((0.0, tip_radius * 0.62, 0.0)),
+                Vector((tip_radius * 0.78, tip_radius * 0.38, tip_radius * 0.74)),
+            )
+        )
+        # Metacarpophalangeal knuckle: a distinct dorsal dome.  There is no
+        # matching palmar ball: a row of spheres across the palm reads as a
+        # string of beads, not knuckles.
         parts.append(
             ellipsoid_object(
                 f"Knuckle_{name}",
-                Vector((base_x, -0.062, knuckle_z + 0.006)),
-                Vector((radius * 1.02, 0.052, radius * 0.72)),
+                Vector((base_x, -0.052, knuckle_z + 0.002)),
+                Vector((radius * 0.92, 0.026, radius * 0.48)),
             )
         )
-        # Webbing into the neighbouring finger.
+        # Interdigital webbing.  It fills the notch between two finger roots,
+        # but it must not rise as a ball above the knuckle line.
         if name != "pinky":
             index = [f[0] for f in FINGERS].index(name)
             next_base = finger_base(FINGERS[index + 1][0])
@@ -335,50 +387,61 @@ def build_hand_mesh() -> bpy.types.Object:
             parts.append(
                 ellipsoid_object(
                     f"Web_{name}",
-                    Vector((mid.x, 0.014, mid.z + 0.020)),
-                    Vector((abs(next_base.x - base.x) * 0.58, 0.094, 0.115)),
+                    Vector((mid.x, 0.0, mid.z - 0.020)),
+                    Vector((abs(next_base.x - base.x) * 0.52, 0.080, 0.042)),
                 )
             )
 
-    # Soft web where the thumb leaves the palm; without it the tube meets the
-    # palm at a hard concave notch.
+    # Dorsal interosseous ridges.  They are deliberately faint, but without
+    # them the back of the hand is a flat paddle between wrist and knuckles.
+    for name, base_x, tip_x, length, radius, knuckle_z in FINGERS:
+        parts.append(
+            capsule_object(
+                f"Tendon_{name}",
+                Vector((base_x * 0.30, -0.076, 0.240)),
+                Vector((base_x, -0.080, knuckle_z - 0.010)),
+                0.020,
+                0.008,
+            )
+        )
+
+    # Soft web where the thumb leaves the palm.  Two overlapping volumes make
+    # a deep, curved web space instead of a socket with a visible notch.
     parts.append(
         ellipsoid_object(
             "ThumbWeb",
-            Vector((0.285, 0.045, 0.455)),
-            Vector((0.125, 0.098, 0.150)),
-            rotation=Matrix.Rotation(math.radians(-38), 4, "Y"),
+            Vector((0.330, 0.022, 0.565)),
+            Vector((0.112, 0.070, 0.155)),
         )
     )
 
-    # Thumb: a broad metacarpal rooted in the thenar mass, then two phalanges.
+    # Thumb: the metacarpal is buried in the thenar, so the visible tube starts
+    # a little above the CMC joint.  Its cross-section is flattened across the
+    # palm so the base does not balloon out of the back of the hand.
     thumb_rings = []
-    samples = 22
+    samples = 30
     for i in range(samples):
-        t = i / (samples - 1)
+        t = 0.18 + 0.82 * i / (samples - 1)
         pos = _sample_polyline(THUMB_POINTS, t)
         direction = _sample_polyline(THUMB_POINTS, min(1.0, t + 0.02)) - _sample_polyline(
             THUMB_POINTS, max(0.0, t - 0.02)
         )
-        # Strong proximal mass tapering to a rounded distal pad.
-        r = 0.168 - 0.076 * t
-        r += 0.008 * math.exp(-(((t - 0.58) / 0.10) ** 2))
-        if t > 0.9:
-            r *= 0.86 + 0.14 * (1.0 - t) / 0.1
-        thumb_rings.append((pos, r, r * 0.92, direction))
-    parts.append(tube_object("Thumb", thumb_rings, sides=24))
+        r = thumb_radius(t)
+        thumb_rings.append((pos, r * 0.82, r, direction))
+    parts.append(tube_object("Thumb", thumb_rings, sides=28))
     parts.append(
         ellipsoid_object(
             "ThumbTip",
             THUMB_POINTS[-1] - (THUMB_POINTS[-1] - THUMB_POINTS[-2]).normalized() * 0.018,
-            Vector((0.086, 0.080, 0.088)),
+            Vector((0.086, 0.082, 0.090)),
         )
     )
+    # Flat, fleshy pad on the palmar face of the distal thumb.
     parts.append(
         ellipsoid_object(
-            "ThumbKnuckle",
-            THUMB_POINTS[2] + THUMB_POINTS[3] * 0.0,
-            Vector((0.090, 0.084, 0.078)),
+            "ThumbPad",
+            _sample_polyline(THUMB_POINTS, 0.90) + Vector((0.0, 0.040, 0.0)),
+            Vector((0.062, 0.036, 0.062)),
         )
     )
 
@@ -391,21 +454,25 @@ def build_hand_mesh() -> bpy.types.Object:
     hand.name = "HandMesh"
 
     # Voxel union turns the overlapping organic pieces into one continuous
-    # surface, then a light smooth pass removes the voxel stair-stepping.
+    # surface, then a light smooth pass removes the voxel stair-stepping.  The
+    # voxel has to be small relative to the finger radius (~0.065 at the tip):
+    # at 0.0115 the shafts came out lumpy and the webs filled in solid.
     remesh = hand.modifiers.new("VoxelUnion", "REMESH")
     remesh.mode = "VOXEL"
-    remesh.voxel_size = 0.0115
+    remesh.voxel_size = 0.0085
     remesh.use_smooth_shade = True
     bpy.context.view_layer.objects.active = hand
     bpy.ops.object.modifier_apply(modifier=remesh.name)
 
     smooth = hand.modifiers.new("Smooth", "SMOOTH")
-    smooth.factor = 0.45
-    smooth.iterations = 3
+    smooth.factor = 0.5
+    smooth.iterations = 2
     bpy.ops.object.modifier_apply(modifier=smooth.name)
 
+    # Keep the silhouette but spend the vertex budget on the palm and fingers
+    # rather than the uniform voxel grid.
     decimate = hand.modifiers.new("Decimate", "DECIMATE")
-    decimate.ratio = 0.30
+    decimate.ratio = 0.32
     bpy.ops.object.modifier_apply(modifier=decimate.name)
 
     _sculpt_details(hand)
@@ -417,6 +484,44 @@ def build_hand_mesh() -> bpy.types.Object:
 # ---------------------------------------------------------------------------
 # skin colour and fine detail
 # ---------------------------------------------------------------------------
+
+
+def _crease_mask(p: Vector) -> float:
+    """1 on a crease, 0 on smooth skin, used to darken crease pigment."""
+    mask = 0.0
+    for name, *_ in FINGERS:
+        points = [finger_point(name, t) for t in FINGER_JOINTS]
+        radius = finger_radius(name, 0.42)
+        for joint_index in (1, 2):
+            centre = points[joint_index]
+            direction = (points[joint_index + 1] - points[joint_index - 1]).normalized()
+            relative = p - centre
+            along = relative.dot(direction)
+            radial = (relative - direction * along).length
+            if abs(along) < 0.022 and radial < radius * 1.7:
+                weight = 0.55 if p.y < 0.0 else 1.0
+                mask = max(mask, weight * math.exp(-((along / 0.010) ** 2)))
+    for joint_index in (2, 3):
+        centre = THUMB_POINTS[joint_index]
+        direction = (
+            THUMB_POINTS[joint_index + 1] - THUMB_POINTS[joint_index - 1]
+        ).normalized()
+        relative = p - centre
+        along = relative.dot(direction)
+        radial = (relative - direction * along).length
+        if abs(along) < 0.022 and radial < 0.125:
+            weight = 0.55 if p.y < 0.0 else 1.0
+            mask = max(mask, weight * math.exp(-((along / 0.009) ** 2)))
+    if p.y > 0.015:
+        for line in PALM_LINES:
+            for a, b in zip(line[:-1], line[1:]):
+                ab = b - a
+                t = max(0.0, min(1.0, (p - a).dot(ab) / ab.length_squared))
+                nearest = a + ab * t
+                d = math.hypot(p.x - nearest.x, p.z - nearest.z)
+                if d < 0.055:
+                    mask = max(mask, math.exp(-((d / 0.0190) ** 2)))
+    return min(1.0, mask)
 
 
 def _paint_skin(hand: bpy.types.Object) -> None:
@@ -446,18 +551,21 @@ def _paint_skin(hand: bpy.types.Object) -> None:
         p = vertex.co
         # Linear-light warm skin.  The palm is a touch lighter, the dorsum a
         # touch deeper, and joints pick up redness from thin skin.
-        base = Vector((0.335, 0.158, 0.112))
-        if p.y > 0.085 and p.z > 0.02:
-            base = base.lerp(Vector((0.400, 0.198, 0.145)), 0.50)
-        elif p.y < -0.05:
-            base = base.lerp(Vector((0.300, 0.138, 0.094)), 0.40)
+        base = Vector((0.470, 0.255, 0.198))
+        if p.y > 0.095 and p.z > 0.02:
+            base = base.lerp(Vector((0.575, 0.360, 0.286)), 0.55)
+        elif p.y < -0.045:
+            base = base.lerp(Vector((0.420, 0.226, 0.172)), 0.45)
         redness = 0.0
         for joint in joints:
             d = (p - joint).length
             if d < 0.115:
                 redness = max(redness, (1.0 - d / 0.115) ** 2)
-        base = base.lerp(Vector((0.430, 0.155, 0.112)), 0.24 * redness)
-        variation = field(p * 1.1) * 0.020 + field(p * 3.1) * 0.010
+        base = base.lerp(Vector((0.580, 0.262, 0.205)), 0.34 * redness)
+        # Crease pigment: a crease is a line of thin, slightly darker skin.
+        crease = _crease_mask(p)
+        base *= 1.0 - 0.30 * crease
+        variation = field(p * 1.1) * 0.020 + field(p * 3.1) * 0.008
         colour = base * (1.0 + variation)
         layer.data[vertex.index].color = (
             max(0.0, min(1.0, colour.x)),
@@ -477,50 +585,48 @@ def _sculpt_details(hand: bpy.types.Object) -> None:
         points = [finger_point(name, t) for t in FINGER_JOINTS]
         finger_data.append((name, points, finger_radius(name, 0.42)))
 
-    palm_lines = [
-        # life line, around the thenar pad
-        [Vector((0.228, 0.150, 0.575)), Vector((0.198, 0.162, 0.480)),
-         Vector((0.136, 0.170, 0.385)), Vector((0.040, 0.172, 0.300))],
-        # head line, across the palm
-        [Vector((-0.262, 0.158, 0.548)), Vector((-0.078, 0.172, 0.535)),
-         Vector((0.096, 0.168, 0.516)), Vector((0.276, 0.150, 0.488))],
-        # heart line, below the fingers
-        [Vector((-0.292, 0.148, 0.708)), Vector((-0.096, 0.162, 0.680)),
-         Vector((0.116, 0.160, 0.656)), Vector((0.300, 0.142, 0.620))],
-        # wrist crease
-        [Vector((-0.196, 0.104, 0.030)), Vector((-0.070, 0.114, 0.020)),
-         Vector((0.070, 0.114, 0.020)), Vector((0.196, 0.102, 0.030))],
-    ]
+    palm_lines = PALM_LINES
 
     for vertex in mesh.vertices:
         co = vertex.co
         normal = vertex.normal
         depth = 0.0
-        # Interphalangeal creases wrap around each finger.
+        # Interphalangeal creases wrap around each finger.  The MCP crease is
+        # shallower and only cut on the palmar side.
         for _name, points, radius in finger_data:
-            for joint_index in (1, 2):
+            for joint_index in (0, 1, 2):
                 centre = points[joint_index]
                 direction = (points[joint_index + 1] - points[joint_index - 1]).normalized()
                 relative = co - centre
                 along = relative.dot(direction)
                 radial = (relative - direction * along).length
-                if abs(along) < 0.022 and radial < radius * 1.7:
-                    depth = max(depth, 0.0068 * math.exp(-((along / 0.0075) ** 2)))
-        # Thumb creases at the MCP and IP.
-        for centre in THUMB_POINTS[1:4]:
+                if abs(along) < 0.026 and radial < radius * 1.75:
+                    if joint_index == 0 and relative.y < 0.0:
+                        continue
+                    strength = 0.0130 if joint_index else 0.0075
+                    depth = max(depth, strength * math.exp(-((along / 0.0075) ** 2)))
+        # Thumb creases at the MCP and IP, wrapping around the digit.
+        for joint_index in (2, 3):
+            centre = THUMB_POINTS[joint_index]
+            direction = (
+                THUMB_POINTS[joint_index + 1] - THUMB_POINTS[joint_index - 1]
+            ).normalized()
             relative = co - centre
-            if relative.length < 0.15:
-                depth = max(depth, 0.0042 * math.exp(-((relative.length / 0.018) ** 2)))
-        # Palm lines are shallow and only on the palmar surface.
-        if co.y > 0.070:
+            along = relative.dot(direction)
+            radial = (relative - direction * along).length
+            if abs(along) < 0.024 and radial < 0.130:
+                depth = max(depth, 0.0110 * math.exp(-((along / 0.0070) ** 2)))
+        # Palm lines: project into the palm plane so the crease follows the
+        # thenar/hypothenar curvature instead of needing an exact Y.
+        if co.y > 0.015:
             for line in palm_lines:
                 for a, b in zip(line[:-1], line[1:]):
                     ab = b - a
                     t = max(0.0, min(1.0, (co - a).dot(ab) / ab.length_squared))
                     nearest = a + ab * t
-                    d = (co - nearest).length
-                    if d < 0.032:
-                        depth = max(depth, 0.0036 * math.exp(-((d / 0.009) ** 2)))
+                    d = math.hypot(co.x - nearest.x, co.z - nearest.z)
+                    if d < 0.040:
+                        depth = max(depth, 0.0040 * math.exp(-((d / 0.0160) ** 2)))
         if depth > 0.0:
             vertex.co = co - normal * depth
     mesh.update()
@@ -594,7 +700,7 @@ def skin_material() -> bpy.types.Material:
     links.new(ntex.outputs["Color"], nmap.inputs["Color"])
     links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
 
-    bsdf.inputs["Roughness"].default_value = 0.60
+    bsdf.inputs["Roughness"].default_value = 0.52
     bsdf.inputs["IOR"].default_value = 1.40
     if "Subsurface Weight" in bsdf.inputs:
         bsdf.inputs["Subsurface Weight"].default_value = 0.05
@@ -606,13 +712,14 @@ def nail_material() -> bpy.types.Material:
     mat = bpy.data.materials.new("Hand_Nails")
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
-    # Nails are not white: they read as translucent keratin over pink skin.
-    bsdf.inputs["Base Color"].default_value = (0.470, 0.245, 0.215, 1.0)
-    bsdf.inputs["Roughness"].default_value = 0.32
+    # Nails are not white: they read as translucent keratin over pink skin,
+    # a little lighter and cooler than the finger but never chalk.
+    bsdf.inputs["Base Color"].default_value = (0.300, 0.160, 0.145, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.46
     bsdf.inputs["IOR"].default_value = 1.45
     if "Coat Weight" in bsdf.inputs:
-        bsdf.inputs["Coat Weight"].default_value = 0.22
-        bsdf.inputs["Coat Roughness"].default_value = 0.18
+        bsdf.inputs["Coat Weight"].default_value = 0.10
+        bsdf.inputs["Coat Roughness"].default_value = 0.22
     return mat
 
 
@@ -621,58 +728,120 @@ def nail_material() -> bpy.types.Material:
 # ---------------------------------------------------------------------------
 
 
-def _nail_transform(direction: Vector, dorsal: Vector):
-    x_axis = dorsal.cross(direction).normalized()
-    y_axis = direction
-    z_axis = x_axis.cross(y_axis).normalized()
-    return Matrix(
-        (
-            (x_axis.x, y_axis.x, z_axis.x),
-            (x_axis.y, y_axis.y, z_axis.y),
-            (x_axis.z, y_axis.z, z_axis.z),
-        )
-    ).to_4x4()
+def _nail_frame(direction: Vector):
+    """Ring frame matching tube_object: local x is dorsal, local y is width."""
+    direction = direction.normalized()
+    helper = Vector((1, 0, 0)) if abs(direction.x) < 0.9 else Vector((0, 1, 0))
+    x_axis = helper.cross(direction).normalized()
+    y_axis = direction.cross(x_axis).normalized()
+    return x_axis, y_axis
+
+
+def _nail_shell(
+    name: str,
+    point_fn,
+    radius_fn,
+    depth_scale: float,
+    t0: float,
+    t1: float,
+    half_angle: float,
+) -> bpy.types.Object:
+    """A curved keratin plate that hugs the dorsal surface of a digit.
+
+    The plate is built on the same centreline curve as the finger, so it
+    follows the bow of the digit and the rounded tip instead of floating like
+    a flat sticker.  It is a thin shell: an outer surface, an inner surface and
+    a rim, which reads as a real nail at grazing angles.
+    """
+    rows, cols = 8, 13
+    thickness = 0.0035
+    outer = []
+    inner = []
+    for r in range(rows):
+        v = r / (rows - 1)
+        t = t0 + (t1 - t0) * v
+        centre = point_fn(t)
+        tangent = (point_fn(min(1.0, t + 0.02)) - point_fn(max(0.0, t - 0.02))).normalized()
+        x_axis, y_axis = _nail_frame(tangent)
+        radius = radius_fn(t)
+        # Rounded-rectangle outline: wide through the middle, rounded at the
+        # cuticle and the free edge, with a little straight run between.
+        vv = 0.08 + 0.84 * v
+        span = half_angle * (1.0 - abs(2.0 * vv - 1.0) ** 8) ** 0.30
+        for c in range(cols):
+            u = c / (cols - 1)
+            a = -span + 2.0 * span * u
+            ca, sa = math.cos(a), math.sin(a)
+            # Point on the elliptical finger cross-section.
+            p = centre + x_axis * (ca * radius * depth_scale) + y_axis * (sa * radius)
+            # Outward normal of that ellipse.
+            normal = (
+                x_axis * (ca / max(radius * depth_scale, 1e-5))
+                + y_axis * (sa / max(radius, 1e-5))
+            ).normalized()
+            # Lift only a hair above the skin; the shell's rim closes the gap.
+            outer.append(p + normal * (thickness + 0.0015))
+            inner.append(p + normal * 0.0002)
+    faces = []
+    for r in range(rows - 1):
+        for c in range(cols - 1):
+            a = r * cols + c
+            b = a + 1
+            d = a + cols
+            e = d + 1
+            faces.append((a, b, e, d))
+            base = rows * cols
+            faces.append((base + a, base + d, base + e, base + b))
+    # Rim: stitch the two surfaces around the perimeter.
+    base = rows * cols
+    for r in range(rows - 1):
+        a = r * cols
+        d = a + cols
+        faces.append((a, d, base + d, base + a))
+        b = r * cols + cols - 1
+        e = b + cols
+        faces.append((b, base + b, base + e, e))
+    for c in range(cols - 1):
+        a = c
+        b = c + 1
+        faces.append((a, base + a, base + b, b))
+        d = (rows - 1) * cols + c
+        e = d + 1
+        faces.append((d, e, base + e, base + d))
+    return new_mesh(name, outer + inner, faces)
 
 
 def build_nails() -> bpy.types.Object:
-    """Small keratin plates sunk into the dorsal face of each fingertip."""
+    """Keratin plates seated on the dorsal tip of every digit."""
     nail_parts = []
-    dorsal = Vector((0, -1, 0))
     tip_data = []
     for name, *_ in FINGERS:
-        tip = finger_tip(name)
-        tip_data.append((name, tip))
-        direction = (tip - finger_point(name, 0.90)).normalized()
-        radius = finger_radius(name, 0.95)
-        centre = tip - direction * 0.058 + dorsal * (radius * 0.80)
-        rot = _nail_transform(direction, dorsal)
         nail_parts.append(
-            ellipsoid_object(
+            _nail_shell(
                 f"Nail_{name}",
-                centre,
-                Vector((radius * 0.66, 0.078, 0.006)),
-                rotation=rot,
-                segments=20,
-                rings=10,
+                lambda t, n=name: finger_point(n, t),
+                lambda t, n=name: finger_radius(n, t),
+                0.88,
+                0.820,
+                0.990,
+                0.96,
             )
         )
+        tip_data.append((name, finger_tip(name)))
 
-    # The thumb plate faces up and slightly toward the viewer.
-    tip = THUMB_POINTS[-1]
-    direction = (tip - THUMB_POINTS[-2]).normalized()
-    thumb_dorsal = Vector((0.30, -0.85, 0.43)).normalized()
-    rot = _nail_transform(direction, thumb_dorsal)
-    tip_data.append(("thumb", tip))
+    # Thumbnail: smaller, rounder, and turned with the opposed thumb.
     nail_parts.append(
-        ellipsoid_object(
+        _nail_shell(
             "Nail_thumb",
-            tip - direction * 0.050 + thumb_dorsal * 0.052,
-            Vector((0.052, 0.068, 0.006)),
-            rotation=rot,
-            segments=20,
-            rings=10,
+            lambda t: _sample_polyline(THUMB_POINTS, t),
+            thumb_radius,
+            0.82,
+            0.790,
+            0.985,
+            0.90,
         )
     )
+    tip_data.append(("thumb", THUMB_POINTS[-1]))
 
     bpy.ops.object.select_all(action="DESELECT")
     for part in nail_parts:
@@ -807,7 +976,7 @@ def _skin_chains():
             "points": thumb_points,
             "joints": [0.0, 0.25, 0.5, 0.75, 1.0],
             "bones": [f"thumb_{i + 1:02d}" for i in range(4)],
-            "radius": lambda t: 0.168 - 0.076 * t,
+            "radius": lambda t: thumb_radius(t),
         }
     )
     return chains
@@ -835,10 +1004,11 @@ def skin_objects(hand: bpy.types.Object, nails: bpy.types.Object, arm: bpy.types
             norm = d / radius
             # 1.0 inside the finger, fading to 0 a little outside the surface.
             f = _clamp01((1.75 - norm) / 0.55)
-            # Vertices below the knuckle belong to the palm.  Without this
-            # ramp the thumb root drags the thenar mass across the hand.
+            # The thumb chain runs through the thenar mass.  Full weight only
+            # from the visible base of the thumb upward; deeper vertices stay
+            # with the hand so folding the thumb does not drag the palm.
             if chain["name"] == "thumb":
-                f *= 0.78 * _clamp01((t - 0.05) / 0.16)
+                f *= 0.90 * _clamp01((t - 0.26) / 0.20)
             else:
                 f *= _clamp01(t / 0.09)
             if f <= 0.0:
@@ -949,10 +1119,10 @@ def setup_studio(dorsal: bool = False, three_quarter: bool = False) -> None:
     move_to_collection(cam, col)
     bpy.context.scene.camera = cam
 
-    for name, loc, energy, size in [
-        ("Key", (-1.6, -2.2 if dorsal else 2.2, 2.9), 380.0, 2.2),
-        ("Fill", (2.2, -1.2 if dorsal else 1.2, 1.3), 120.0, 2.0),
-        ("Rim", (0.4, 2.2 if dorsal else -2.2, 2.4), 220.0, 1.8),
+    for name, loc, energy, size, colour in [
+        ("Key", (-1.6, -2.2 if dorsal else 2.2, 2.9), 150.0, 2.2, (1.0, 0.94, 0.87)),
+        ("Fill", (2.2, -1.2 if dorsal else 1.2, 1.3), 48.0, 2.0, (1.0, 0.88, 0.78)),
+        ("Rim", (0.4, 2.2 if dorsal else -2.2, 2.4), 95.0, 1.8, (0.80, 0.90, 1.0)),
     ]:
         bpy.ops.object.light_add(type="AREA", location=loc)
         light = bpy.context.active_object
@@ -960,6 +1130,7 @@ def setup_studio(dorsal: bool = False, three_quarter: bool = False) -> None:
         light.data.energy = energy
         light.data.shape = "DISK"
         light.data.size = size
+        light.data.color = colour
         d = Vector((0.05, 0.0, 0.95)) - light.location
         light.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
         move_to_collection(light, col)
@@ -987,12 +1158,12 @@ def setup_studio(dorsal: bool = False, three_quarter: bool = False) -> None:
 # Fold amounts per finger, in radians about the local X axis.  The three
 # segments close progressively so the fingertip ends up over the palm.
 FOLD = {
-    "index": (-0.86, -0.98, -0.42),
-    "middle": (-0.82, -1.02, -0.46),
-    "ring": (-0.88, -1.00, -0.44),
-    "pinky": (-0.94, -1.02, -0.48),
+    "index": (-0.86, -1.02, -0.92),
+    "middle": (-0.82, -1.06, -0.98),
+    "ring": (-0.88, -1.04, -0.96),
+    "pinky": (-0.94, -1.06, -1.00),
 }
-THUMB_FOLD = (-0.82, -0.42, -0.28, -0.16)
+THUMB_FOLD = (-0.32, -1.05, -0.85, -0.45)
 
 
 def set_pose(arm: bpy.types.Object, extensions: dict[str, float]) -> None:

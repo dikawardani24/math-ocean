@@ -102,7 +102,7 @@ All decor is visual only and has no gameplay state.
 | Beads per rod | 10 |
 | Rod length | 2.70 |
 | Rod X extent | −1.35 … +1.35 |
-| Bead X extent | −1.24 … +1.24 |
+| Bead X extent | −1.10 … +1.10 |
 | Bead spacing | 0.22 |
 | Bead radius | 0.095 (X scaled to 0.62, giving flattened discs) |
 | Row heights (`ROW_Z`) | −1.28, −0.995, −0.71, … +1.285 (step 0.285) |
@@ -111,7 +111,12 @@ In the GLB, these become:
 
 - bead `translation = [x, y, 0]` with Y equal to the source `ROW_Z`
 - rod 0 at Y ≈ −1.28 and rod 9 at Y ≈ +1.285
-- bead X from −1.24 to +1.24
+- bead X from −0.88 to +1.10 at rest (index 0 furthest right)
+
+The packing span is exactly ten bead slots (`rightX - leftX == 10 * spacing`).
+That is deliberate: a bead crossing from the uncounted group to the counted
+group moves by one spacing. With a wider span it had to jump a two-slot hole,
+which made a one-bead gesture look like three or four beads moving.
 
 ## Runtime mapping
 
@@ -128,7 +133,8 @@ total = sum(rodCounts)
   `leftX + (9 - index) * spacing`, so highest indices are furthest screen-left;
 - uncounted beads pack at `rightX - index * spacing`, so index 0 is furthest
   screen-right;
-- the remaining half-slot of slack is the visible gap between the two groups.
+- exactly one empty slot separates the two groups, and the five-bead marker at
+  `x = 0` sits in that slot at a five/five split.
 
 The controller (`kecrekan_controller.dart`) imports the GLB, walks the node tree,
 collects `Bead_R*` nodes into `KecrekanBead` objects, and then drives every bead

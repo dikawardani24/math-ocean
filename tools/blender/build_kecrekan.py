@@ -40,8 +40,8 @@ BEAD_X_SCALE = 0.62
 ROD_LENGTH = 2.70
 ROD_X = 1.35
 ROW_Z = [-1.28 + i * 0.285 for i in range(ROD_COUNT)]
-BEAD_LEFT = -1.24
-BEAD_RIGHT = 1.24
+BEAD_LEFT = -1.10
+BEAD_RIGHT = 1.10
 BEAD_COLORS = [
     ("Turquoise", (0.10, 0.78, 0.82, 1.0), (0.48, 0.96, 0.94, 1.0)),
     ("Coral", (0.95, 0.30, 0.42, 1.0), (1.0, 0.62, 0.68, 1.0)),
@@ -609,8 +609,9 @@ def create_beads(mats: dict[str, bpy.types.Material], root: bpy.types.Object) ->
     for row in range(ROD_COUNT):
         color_index = row % len(BEAD_COLORS)
         for i in range(BEADS_PER_ROD):
-            # Rest state: all beads parked on the right (0 active).
-            x = BEAD_RIGHT - (BEADS_PER_ROD - 1 - i) * BEAD_SPACING
+            # Rest state: all beads parked on the right (0 active).  Index 0
+            # is furthest right, matching KecrekanMath.beadX.
+            x = BEAD_RIGHT - i * BEAD_SPACING
             mesh = meshes[(color_index, i < 5)]
             bead = bpy.data.objects.new(f"Bead_R{row}_{i:02d}", mesh)
             bead.location = (x, 0.0, ROW_Z[row])
@@ -854,7 +855,7 @@ def build_poc(mats: dict[str, bpy.types.Material], glass: bpy.types.Image) -> bp
         if obj.name in {"POC_BeadMesh_Coral", "POC_BeadMesh_Gold"}:
             bpy.data.objects.remove(obj, do_unlink=True)
     for i in range(10):
-        x = BEAD_RIGHT - (9 - i) * BEAD_SPACING
+        x = BEAD_RIGHT - i * BEAD_SPACING
         bead = bpy.data.objects.new(f"POC_Bead_R0_{i:02d}", coral_mesh if i < 5 else gold_mesh)
         bead.location = (x, 0.0, 0.0)
         bead["role"] = "bead"

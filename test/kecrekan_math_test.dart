@@ -41,20 +41,53 @@ void main() {
       }
     });
 
-    test('the five split leaves the half-bead gap', () {
-      final positions = [
-        for (var i = 0; i < 10; i++) KecrekanMath.beadX(i, 5),
-      ];
+    test('the five split leaves exactly one empty slot', () {
+      final positions = [for (var i = 0; i < 10; i++) KecrekanMath.beadX(i, 5)];
       final gap = positions[4] - positions[5];
-      expect(gap, closeTo(0.72, 0.0001));
+      // One empty slot between the groups; the bead that crosses it moves by
+      // one spacing, not by the old two-and-a-bit spacing hole.
+      expect(gap, closeTo(2 * KecrekanMath.spacing, 0.0001));
+      expect(gap, closeTo(0.44, 0.0001));
       expect(positions.first, KecrekanMath.rightX);
       expect(positions.last, KecrekanMath.leftX);
     });
 
+    test('one count moves the crossing bead exactly one slot', () {
+      for (var count = 0; count < 10; count++) {
+        final crossing = 9 - count;
+        final before = KecrekanMath.beadX(crossing, count);
+        final after = KecrekanMath.beadX(crossing, count + 1);
+        expect(
+          before - after,
+          closeTo(KecrekanMath.spacing, 1e-9),
+          reason: 'count $count -> ${count + 1} should move one slot only',
+        );
+      }
+    });
+
+    test('the ten slots fill the packing span exactly', () {
+      expect(
+        KecrekanMath.rightX - KecrekanMath.leftX,
+        closeTo(10 * KecrekanMath.spacing, 1e-9),
+      );
+      // At rest the left-most uncounted bead sits exactly one slot from the
+      // left stop, so the first drag has somewhere to go.
+      expect(
+        KecrekanMath.beadX(9, 0),
+        closeTo(KecrekanMath.leftX + KecrekanMath.spacing, 1e-9),
+      );
+    });
+
     test('counted beads pack to the left and uncounted to the right', () {
-      expect(KecrekanMath.beadX(9, 0), KecrekanMath.rightX - 9 * KecrekanMath.spacing);
+      expect(
+        KecrekanMath.beadX(9, 0),
+        KecrekanMath.rightX - 9 * KecrekanMath.spacing,
+      );
       expect(KecrekanMath.beadX(9, 10), KecrekanMath.leftX);
-      expect(KecrekanMath.beadX(0, 10), KecrekanMath.leftX + 9 * KecrekanMath.spacing);
+      expect(
+        KecrekanMath.beadX(0, 10),
+        KecrekanMath.leftX + 9 * KecrekanMath.spacing,
+      );
     });
 
     test('edge helpers point at the bead next to the gap', () {
@@ -105,21 +138,18 @@ void main() {
 
     test('reversing retraces the same counts without lifting', () {
       final spacing = KecrekanMath.spacing;
-      var count = 0;
       const start = 0;
-      for (final slots in [1, 2, 3, 4, 5, 4, 3, 2, 1, 0, -1, -2]) {
+      const forward = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      final backward = [...forward.reversed, 0, -1, -2];
+      for (final slots in [...forward, ...backward]) {
         final next = KecrekanMath.dragCount(
           startCount: start,
           dx: -slots * spacing,
         );
-        // Each frame is computed from the anchor, so no accumulated drift and
-        // no skipped values.
-        if (slots > 0) {
-          expect(next, greaterThanOrEqualTo(count));
-        }
-        count = next;
+        // Every frame is computed from the anchor, so reversing retraces the
+        // identical counts with no accumulated drift or skipped values.
+        expect(next, slots.clamp(0, 10));
       }
-      expect(count, 0);
     });
 
     test('one step per slot, never a jump', () {
@@ -143,10 +173,7 @@ void main() {
       // Half a slot alone is not enough; it needs the dead band too.
       expect(KecrekanMath.dragCount(startCount: 2, dx: -0.5 * spacing), 2);
       expect(
-        KecrekanMath.dragCount(
-          startCount: 2,
-          dx: -(0.5 + 0.13) * spacing,
-        ),
+        KecrekanMath.dragCount(startCount: 2, dx: -(0.5 + 0.13) * spacing),
         3,
       );
       // Coming back to exactly the half-way point does not reverse.
@@ -164,11 +191,28 @@ void main() {
         final positions = [
           for (var i = 0; i < 10; i++) KecrekanMath.beadX(i, count),
         ];
-        final left = positions.where((x) => x < 0).length;
-        final right = positions.where((x) => x > 0).length;
-        expect(left, count);
-        expect(right, 10 - count);
         expect(positions.toSet().length, 10, reason: 'no two beads overlap');
+
+        // The counted run packs against the left stop and the uncounted run
+        // against the right, each one contiguous and in bead order.
+        final counted = <double>[];
+        final uncounted = <double>[];
+        for (var i = 0; i < 10; i++) {
+          final expected = i >= 10 - count
+              ? KecrekanMath.leftX + (9 - i) * KecrekanMath.spacing
+              : KecrekanMath.rightX - i * KecrekanMath.spacing;
+          expect(positions[i], closeTo(expected, 1e-9));
+          (i >= 10 - count ? counted : uncounted).add(positions[i]);
+        }
+        expect(counted.length, count);
+        expect(uncounted.length, 10 - count);
+        if (counted.isNotEmpty && uncounted.isNotEmpty) {
+          expect(
+            counted.reduce((a, b) => a > b ? a : b),
+            lessThan(uncounted.reduce((a, b) => a < b ? a : b)),
+            reason: 'the two runs never interleave or overlap',
+          );
+        }
       }
     });
   });

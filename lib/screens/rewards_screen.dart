@@ -133,11 +133,11 @@ class _RewardsScreenState extends State<RewardsScreen>
                         children: [
                           Text(
                             'Your collection',
-                            style:
-                                Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: OceanColors.foam,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: OceanColors.foam,
+                                  fontWeight: FontWeight.w800,
+                                ),
                           ),
                           const SizedBox(width: 8),
                           const Text('🌺', style: TextStyle(fontSize: 18)),
@@ -150,16 +150,15 @@ class _RewardsScreenState extends State<RewardsScreen>
                     sliver: SliverGrid.builder(
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 150,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 0.82,
-                      ),
+                            maxCrossAxisExtent: 150,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.82,
+                          ),
                       itemCount: kTreasures.length,
                       itemBuilder: (context, index) {
                         final treasure = kTreasures[index];
-                        final owned =
-                            progress.treasures.contains(treasure.id);
+                        final owned = progress.treasures.contains(treasure.id);
                         return _TreasureTile(
                           treasure: treasure,
                           owned: owned,
@@ -232,21 +231,17 @@ class _ChestHero extends StatelessWidget {
           ),
           Text(
             complete ? 'The grotto is complete' : 'A chest of reef treasures',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 2),
           Text(
-            complete
-                ? 'You found every single treasure. Tala is doing flips!'
-                : 'Spend 3 pearls to open one. Every chest hides something new.',
+            complete ? 'You found every single treasure. Tala is doing flips!' : 'Spend 3 pearls to open one. Every chest hides something new.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Colors.white.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -255,8 +250,8 @@ class _ChestHero extends StatelessWidget {
               label: complete
                   ? 'Collection complete'
                   : opening
-                      ? 'Opening…'
-                      : 'Open chest · 3 💧',
+                  ? 'Opening…'
+                  : 'Open chest · 3 💧',
               icon: complete
                   ? Icons.workspace_premium_rounded
                   : Icons.redeem_rounded,
@@ -336,10 +331,7 @@ class _ChestPainter extends CustomPainter {
         ..strokeWidth = 4
         ..color = const Color(0xFF4A2B12),
     );
-    canvas.drawRect(
-      Rect.fromLTWH(w * 0.1, h * 0.33, w * 0.8, h * 0.045),
-      band,
-    );
+    canvas.drawRect(Rect.fromLTWH(w * 0.1, h * 0.33, w * 0.8, h * 0.045), band);
     canvas.restore();
     // Hovering sparkle.
     canvas.drawCircle(
@@ -408,10 +400,10 @@ class _TreasureTile extends StatelessWidget {
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: owned ? OceanColors.ink : Colors.white54,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                    ),
+                  color: owned ? OceanColors.ink : Colors.white54,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
               ),
             ],
           ),
@@ -460,29 +452,27 @@ class _TreasureDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'New treasure!',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: OceanColors.coralDeep,
-                    letterSpacing: 1.5,
-                  ),
+              style: Theme.of(context).textTheme.labelLarge
+                  ?.copyWith(color: OceanColors.coralDeep, letterSpacing: 1.5),
             ),
             Text(
               treasure.name,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: OceanColors.ink,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 28,
-                  ),
+                color: OceanColors.ink,
+                fontWeight: FontWeight.w800,
+                fontSize: 28,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               treasure.blurb,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: OceanColors.inkSoft,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
+                color: OceanColors.inkSoft,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
             ),
             const SizedBox(height: 16),
             BigButton(
@@ -531,18 +521,18 @@ class _TreasureSheet extends StatelessWidget {
               Text(
                 treasure.name,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: OceanColors.ink,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: OceanColors.ink,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 treasure.blurb,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: OceanColors.inkSoft,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: OceanColors.inkSoft,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 16),
               BigButton(

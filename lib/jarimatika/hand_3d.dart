@@ -121,25 +121,30 @@ class _JarimatikaHandState extends State<JarimatikaHand>
       _scene.environmentIntensity = 0.0;
       _scene.directionalLight = DirectionalLight(
         // Travels down and into the screen, from over the viewer's shoulder.
-        direction: vm.Vector3(-0.38, -0.72, -0.62),
+        // The camera sits on the palmar side (negative Z), so the key light
+        // has to travel toward positive Z to reach the palm.
+        direction: vm.Vector3(-0.38, -0.72, 0.62),
         color: vm.Vector3(1.0, 0.97, 0.92),
-        intensity: 2.7,
+        intensity: 4.2,
       );
       // A cool rim and a warm fill keep the silhouette readable against the
       // dark ocean card without flattening the form.
       _addPointLight(
-        position: vm.Vector3(1.9, 1.5, 2.6),
-        color: vm.Vector3(1.0, 0.86, 0.74),
-        intensity: 9.0,
+        position: vm.Vector3(1.9, 1.5, -2.6),
+        color: vm.Vector3(1.0, 0.88, 0.78),
+        intensity: 16.0,
       );
       _addPointLight(
-        position: vm.Vector3(-2.1, 1.2, -1.8),
-        color: vm.Vector3(0.55, 0.78, 1.0),
-        intensity: 11.0,
+        position: vm.Vector3(-2.1, 1.2, 1.8),
+        color: vm.Vector3(0.58, 0.80, 1.0),
+        intensity: 18.0,
       );
 
       _camera = PerspectiveCamera(
-        position: vm.Vector3(widget.mirrored ? -0.62 : 0.62, 0.80, 4.15),
+        // glTF is Y-up: the model's palm faces -Z, so the camera looks from
+        // -Z toward the fingers to show the palmar side (the side a child
+        // reads in Jarimatika).
+        position: vm.Vector3(widget.mirrored ? -0.62 : 0.62, 0.80, -4.15),
         target: vm.Vector3(0, 0.76, 0),
         fovRadiansY: 33 * math.pi / 180,
         fovNear: 0.1,
@@ -185,12 +190,18 @@ class _JarimatikaHandState extends State<JarimatikaHand>
       final finger = kFingerOrder[i];
       final angles = poseAngles(finger, _visual[i]);
       final names = fingerBoneNames(finger);
+      // The four finger chains use roll 0, so +X is lateral and a negative
+      // angle curls toward the palm.  The thumb chain is rolled to bend across
+      // the palm; glTF bakes that roll with the local X pointing the other way,
+      // so its authored fold is applied about -X.  Keeping the sign here means
+      // [kFingerFolds] stays identical to `THUMB_FOLD` in the Blender source.
+      final axis = finger == Finger.thumb ? -1.0 : 1.0;
       for (var j = 0; j < names.length && j < angles.length; j++) {
         final node = _bones[names[j]];
         final rest = _rest[names[j]];
         if (node == null || rest == null) continue;
         node.rotation =
-            rest * vm.Quaternion.axisAngle(vm.Vector3(1, 0, 0), angles[j]);
+            rest * vm.Quaternion.axisAngle(vm.Vector3(axis, 0, 0), angles[j]);
       }
     }
   }

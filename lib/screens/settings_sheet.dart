@@ -65,9 +65,7 @@ class _SettingsSheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Settings',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
+                          style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 color: OceanColors.ink,
                                 fontWeight: FontWeight.w800,
@@ -132,9 +130,7 @@ class _SettingsSheet extends StatelessWidget {
                             '${progress.totalStars} stars · '
                             '${progress.completedMissions} missions · '
                             '${progress.treasureCount} treasures',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: OceanColors.ink,
                                   fontWeight: FontWeight.w700,
@@ -143,9 +139,7 @@ class _SettingsSheet extends StatelessWidget {
                         ),
                         Text(
                           '💧 ${progress.pearls}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: OceanColors.ink,
                                 fontWeight: FontWeight.w800,
@@ -168,10 +162,10 @@ class _SettingsSheet extends StatelessWidget {
                     'A little maths world for big ocean explorers.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: OceanColors.inkSoft.withValues(alpha: 0.7),
-                          fontSize: 10,
-                          height: 1.3,
-                        ),
+                      color: OceanColors.inkSoft.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -187,9 +181,7 @@ class _SettingsSheet extends StatelessWidget {
       context: context,
       builder: (dialogContext) => Dialog(
         backgroundColor: OceanColors.shell,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
           child: Column(
@@ -199,7 +191,8 @@ class _SettingsSheet extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Start again?',
-                style: Theme.of(dialogContext).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(dialogContext).textTheme.headlineSmall
+                    ?.copyWith(
                       color: OceanColors.ink,
                       fontWeight: FontWeight.w800,
                     ),
@@ -210,9 +203,9 @@ class _SettingsSheet extends StatelessWidget {
                 'This cannot be undone.',
                 textAlign: TextAlign.center,
                 style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
-                      color: OceanColors.inkSoft,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: OceanColors.inkSoft,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -222,10 +215,7 @@ class _SettingsSheet extends StatelessWidget {
                       label: 'Keep',
                       icon: Icons.favorite_rounded,
                       height: 48,
-                      colors: const [
-                        Color(0xFFE6F5F1),
-                        Color(0xFFCDEAE4),
-                      ],
+                      colors: const [Color(0xFFE6F5F1), Color(0xFFCDEAE4)],
                       onTap: () => Navigator.of(dialogContext).pop(false),
                     ),
                   ),
@@ -293,16 +283,14 @@ class _ToggleRow extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: OceanColors.ink,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: OceanColors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: OceanColors.inkSoft,
-                        fontSize: 10.5,
-                      ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: OceanColors.inkSoft, fontSize: 10.5),
                 ),
               ],
             ),

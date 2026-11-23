@@ -42,11 +42,11 @@ const Map<int, Set<Finger>> kJarimatikaShapes = {
 /// extension drives every angle toward zero, so a fully extended finger is
 /// straight and a folded one curls toward the palm.
 const Map<Finger, List<double>> kFingerFolds = {
-  Finger.thumb: [-0.82, -0.42, -0.28, -0.16],
-  Finger.indexFinger: [-0.86, -0.98, -0.42],
-  Finger.middle: [-0.82, -1.02, -0.46],
-  Finger.ring: [-0.88, -1.00, -0.44],
-  Finger.pinky: [-0.94, -1.02, -0.48],
+  Finger.thumb: [-0.32, -1.05, -0.85, -0.45],
+  Finger.indexFinger: [-0.86, -1.02, -0.92],
+  Finger.middle: [-0.82, -1.06, -0.98],
+  Finger.ring: [-0.88, -1.04, -0.96],
+  Finger.pinky: [-0.94, -1.06, -1.00],
 };
 
 /// The bone key used by the glTF skeleton for a finger.

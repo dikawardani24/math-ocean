@@ -3,7 +3,9 @@ import 'package:math_ocean/app.dart';
 import 'package:math_ocean/core/progress.dart';
 
 void main() {
-  testWidgets('the ocean home shows the brand and the reef map', (tester) async {
+  testWidgets('the ocean home shows the brand and the reef map', (
+    tester,
+  ) async {
     final progress = ProgressController.inMemory();
     await tester.pumpWidget(MathOceanApp(progress: progress));
     await tester.pump(const Duration(milliseconds: 200));

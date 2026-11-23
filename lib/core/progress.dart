@@ -82,7 +82,8 @@ class ProgressController extends ChangeNotifier {
   int get totalStars =>
       kMissions.fold(0, (sum, mission) => sum + starsFor(mission.id));
 
-  int get completedMissions => kMissions.where((m) => starsFor(m.id) > 0).length;
+  int get completedMissions =>
+      kMissions.where((m) => starsFor(m.id) > 0).length;
 
   int correctFor(StationKind kind) => _correct[kind.id] ?? 0;
   int firstTryFor(StationKind kind) => _firstTry[kind.id] ?? 0;
@@ -111,26 +112,16 @@ class ProgressController extends ChangeNotifier {
       totalStars >= 8;
 
   List<MasteryGoal> get masteryGoals => [
-        MasteryGoal(
-          'Count cleanly',
-          firstTryFor(StationKind.counting),
-          3,
-          '💧',
-        ),
-        MasteryGoal(
-          'Add cleanly',
-          firstTryFor(StationKind.addition),
-          2,
-          '➕',
-        ),
-        MasteryGoal(
-          'Take away cleanly',
-          firstTryFor(StationKind.subtraction),
-          1,
-          '➖',
-        ),
-        MasteryGoal('Collect stars', totalStars, 8, '⭐'),
-      ];
+    MasteryGoal('Count cleanly', firstTryFor(StationKind.counting), 3, '💧'),
+    MasteryGoal('Add cleanly', firstTryFor(StationKind.addition), 2, '➕'),
+    MasteryGoal(
+      'Take away cleanly',
+      firstTryFor(StationKind.subtraction),
+      1,
+      '➖',
+    ),
+    MasteryGoal('Collect stars', totalStars, 8, '⭐'),
+  ];
 
   /// The next unplayed mission in a station, for the big "Dive in" button.
   Mission? nextMission(StationKind kind) {
@@ -212,7 +203,9 @@ class ProgressController extends ChangeNotifier {
   /// cannot afford it / has everything.
   String? openChest({int cost = 3}) {
     if (_pearls < cost) return null;
-    final missing = kTreasures.where((t) => !_treasures.contains(t.id)).toList();
+    final missing = kTreasures
+        .where((t) => !_treasures.contains(t.id))
+        .toList();
     if (missing.isEmpty) return null;
     _pearls -= cost;
     final pick = missing[(_treasures.length + _totalCorrect) % missing.length];
@@ -259,31 +252,31 @@ class ProgressController extends ChangeNotifier {
   // ── persistence ──────────────────────────────────────────────────────────
 
   Map<String, Object?> _toMap() => {
-        'stars': _stars,
-        'pearls': _pearls,
-        'treasures': _treasures.toList(),
-        'correct': _correct,
-        'firstTry': _firstTry,
-        'seenTips': _seenTips.toList(),
-        'jarimatikaCorrect': _jarimatikaCorrect,
-        'jarimatikaBestStreak': _jarimatikaBestStreak,
-        'jarimatikaPlays': _jarimatikaPlays,
-        'totalCorrect': _totalCorrect,
-        'sound': _soundOn,
-        'voice': _voiceOn,
-        'ambience': _ambienceOn,
-        'lastMission': _lastMissionId,
-      };
+    'stars': _stars,
+    'pearls': _pearls,
+    'treasures': _treasures.toList(),
+    'correct': _correct,
+    'firstTry': _firstTry,
+    'seenTips': _seenTips.toList(),
+    'jarimatikaCorrect': _jarimatikaCorrect,
+    'jarimatikaBestStreak': _jarimatikaBestStreak,
+    'jarimatikaPlays': _jarimatikaPlays,
+    'totalCorrect': _totalCorrect,
+    'sound': _soundOn,
+    'voice': _voiceOn,
+    'ambience': _ambienceOn,
+    'lastMission': _lastMissionId,
+  };
 
   /// The exact save payload, exposed so persistence can be verified in tests.
   Map<String, Object?> toJsonForTesting() => _toMap();
 
   void _applyMap(Map<String, Object?> map) {
     Map<String, int> ints(Object? raw) => {
-          if (raw is Map)
-            for (final entry in raw.entries)
-              if (entry.value is num) '${entry.key}': (entry.value as num).toInt(),
-        };
+      if (raw is Map)
+        for (final entry in raw.entries)
+          if (entry.value is num) '${entry.key}': (entry.value as num).toInt(),
+    };
 
     _stars
       ..clear()
@@ -302,8 +295,7 @@ class ProgressController extends ChangeNotifier {
       ..addAll((map['seenTips'] as List?)?.map((e) => '$e') ?? const []);
     _pearls = (map['pearls'] as num?)?.toInt() ?? 0;
     _jarimatikaCorrect = (map['jarimatikaCorrect'] as num?)?.toInt() ?? 0;
-    _jarimatikaBestStreak =
-        (map['jarimatikaBestStreak'] as num?)?.toInt() ?? 0;
+    _jarimatikaBestStreak = (map['jarimatikaBestStreak'] as num?)?.toInt() ?? 0;
     _jarimatikaPlays = (map['jarimatikaPlays'] as num?)?.toInt() ?? 0;
     _totalCorrect = (map['totalCorrect'] as num?)?.toInt() ?? 0;
     _soundOn = map['sound'] as bool? ?? true;
@@ -343,8 +335,7 @@ class ProgressScope extends InheritedNotifier<ProgressController> {
   }
 
   static ProgressController read(BuildContext context) {
-    final scope =
-        context.getInheritedWidgetOfExactType<ProgressScope>();
+    final scope = context.getInheritedWidgetOfExactType<ProgressScope>();
     assert(scope != null, 'ProgressScope is missing above this widget.');
     return scope!.notifier!;
   }

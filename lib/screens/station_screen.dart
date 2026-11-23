@@ -48,7 +48,8 @@ class StationScreen extends StatelessWidget {
                     sliver: SliverToBoxAdapter(
                       child: OceanHeader(
                         title: kind.stationName,
-                        subtitle: '${kind.label} · ${progress.stationStars(kind)} '
+                        subtitle:
+                            '${kind.label} · ${progress.stationStars(kind)} '
                             'of ${missions.length * 3} stars',
                         onBack: () => Navigator.of(context).maybePop(),
                         trailing: RoundIconButton(
@@ -76,9 +77,8 @@ class StationScreen extends StatelessWidget {
                               !progress.jarimatikaChallengeUnlocked) {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const JarimatikaScreen(
-                                  practice: true,
-                                ),
+                                builder: (_) =>
+                                    const JarimatikaScreen(practice: true),
                               ),
                             );
                             return;
@@ -111,11 +111,11 @@ class StationScreen extends StatelessWidget {
                         children: [
                           Text(
                             isJarima ? 'Finger challenges' : 'Missions',
-                            style:
-                                Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: OceanColors.foam,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: OceanColors.foam,
+                                  fontWeight: FontWeight.w800,
+                                ),
                           ),
                           const Spacer(),
                           if (!isJarima)
@@ -149,7 +149,7 @@ class StationScreen extends StatelessWidget {
                         final mission = missions[index];
                         final unlocked = isJarima
                             ? progress.jarimatikaChallengeUnlocked &&
-                                progress.isMissionUnlocked(mission)
+                                  progress.isMissionUnlocked(mission)
                             : progress.isMissionUnlocked(mission);
                         return _MissionRow(
                           index: index,
@@ -159,16 +159,16 @@ class StationScreen extends StatelessWidget {
                           onTap: unlocked
                               ? () => _openMission(context, mission)
                               : () => showOceanSnack(
-                                    context,
-                                    isJarima
-                                        ? 'Practice on the hands to unlock this '
+                                  context,
+                                  isJarima
+                                      ? 'Practice on the hands to unlock this '
                                             'challenge. First-try answers '
                                             'build mastery.'
-                                        : 'Finish the mission above first.',
-                                    icon: isJarima
-                                        ? Icons.back_hand_rounded
-                                        : Icons.lock_rounded,
-                                  ),
+                                      : 'Finish the mission above first.',
+                                  icon: isJarima
+                                      ? Icons.back_hand_rounded
+                                      : Icons.lock_rounded,
+                                ),
                         );
                       },
                     ),
@@ -224,8 +224,8 @@ class _StationHero extends StatelessWidget {
     final label = isJarima && !challengeReady
         ? 'Practice the hands'
         : stars >= maxStars
-            ? 'Play again'
-            : 'Dive in';
+        ? 'Play again'
+        : 'Dive in';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
@@ -269,10 +269,10 @@ class _StationHero extends StatelessWidget {
                     Text(
                       kind.blurb,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     if (!isJarima)
@@ -282,9 +282,7 @@ class _StationHero extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             '$stars / $maxStars',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.75),
                                   fontWeight: FontWeight.w700,
@@ -297,11 +295,11 @@ class _StationHero extends StatelessWidget {
                         challengeReady
                             ? 'Challenge unlocked — first-try mastery!'
                             : 'Practice is open. Build mastery to unlock the '
-                                'challenge.',
+                                  'challenge.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),
@@ -317,7 +315,10 @@ class _StationHero extends StatelessWidget {
                   icon: isJarima && !challengeReady
                       ? Icons.back_hand_rounded
                       : Icons.waves_rounded,
-                  colors: [kind.color, Color.lerp(kind.color, Colors.white, 0.3)!],
+                  colors: [
+                    kind.color,
+                    Color.lerp(kind.color, Colors.white, 0.3)!,
+                  ],
                   textColor: OceanColors.ink,
                   onTap: onDive,
                 ),
@@ -357,9 +358,9 @@ class _MasteryPanel extends StatelessWidget {
               Text(
                 ready ? 'Mastery complete!' : 'Mastery evidence',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: OceanColors.ink,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: OceanColors.ink,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const Spacer(),
               OceanPill(
@@ -383,9 +384,9 @@ class _MasteryPanel extends StatelessWidget {
                     child: Text(
                       goal.label,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: OceanColors.inkSoft,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: OceanColors.inkSoft,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -395,8 +396,9 @@ class _MasteryPanel extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: goal.fraction,
                         minHeight: 7,
-                        backgroundColor:
-                            OceanColors.ink.withValues(alpha: 0.08),
+                        backgroundColor: OceanColors.ink.withValues(
+                          alpha: 0.08,
+                        ),
                         valueColor: AlwaysStoppedAnimation(
                           goal.done ? OceanColors.aqua : OceanColors.lilac,
                         ),
@@ -407,10 +409,10 @@ class _MasteryPanel extends StatelessWidget {
                   Text(
                     '${goal.current}/${goal.goal}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: OceanColors.inkSoft,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 10,
-                        ),
+                      color: OceanColors.inkSoft,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
                   ),
                 ],
               ),
@@ -419,10 +421,10 @@ class _MasteryPanel extends StatelessWidget {
             'Mastery counts correct answers on the first try. Practice never '
             'locks, so there is always a way to keep going.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: OceanColors.inkSoft.withValues(alpha: 0.8),
-                  fontSize: 10.5,
-                  height: 1.25,
-                ),
+              color: OceanColors.inkSoft.withValues(alpha: 0.8),
+              fontSize: 10.5,
+              height: 1.25,
+            ),
           ),
         ],
       ),
@@ -491,7 +493,8 @@ class _MissionRow extends StatelessWidget {
                         mission.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: OceanColors.ink,
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
@@ -504,10 +507,10 @@ class _MissionRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: OceanColors.inkSoft,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11.5,
-                            ),
+                          color: OceanColors.inkSoft,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11.5,
+                        ),
                       ),
                     ],
                   ),
@@ -566,24 +569,21 @@ class _FreePlayCard extends StatelessWidget {
                   Text(
                     'Free play',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: OceanColors.foam,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: OceanColors.foam,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   Text(
                     'Slide beads with no timer, no score, and no wrong answers.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: OceanColors.mint.withValues(alpha: 0.7),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: OceanColors.mint.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: OceanColors.mint,
-            ),
+            const Icon(Icons.chevron_right_rounded, color: OceanColors.mint),
           ],
         ),
       ),

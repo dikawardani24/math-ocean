@@ -37,7 +37,8 @@ class _SmokeState extends State<Smoke> {
 
       walk(node);
       scene.add(node);
-      final bounds = node.combinedWorldBounds ??
+      final bounds =
+          node.combinedWorldBounds ??
           vm.Aabb3.minMax(
             vm.Vector3(-1.8, -1.8, -0.5),
             vm.Vector3(1.8, 1.8, 0.5),

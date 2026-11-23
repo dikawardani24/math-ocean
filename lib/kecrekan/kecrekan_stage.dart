@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter_scene/scene.dart';
 
@@ -208,6 +209,11 @@ class _KecrekanStageState extends State<KecrekanStage> {
                     else
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
+                        // Anchor the pan where the finger went down, not where
+                        // the gesture recogniser finally accepted it. Otherwise
+                        // the touch slop swallows most of the first bead's
+                        // travel and a four-bead drag only counts three.
+                        dragStartBehavior: DragStartBehavior.down,
                         onTapUp: _tap,
                         onPanDown: _panDown,
                         onPanStart: _panStart,

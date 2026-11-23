@@ -7,18 +7,21 @@ const List<Mission> kMissions = [
     id: 'count_1',
     station: StationKind.counting,
     title: 'Bubble Bop',
-    story: 'Four shiny bubbles float up from the coral. Slide four beads to the '
+    story:
+        'Four shiny bubbles float up from the coral. Slide four beads to the '
         'left to count them.',
     target: 4,
     hint: 'Tap the first bead on the right side. Each tap slides one over.',
-    voice: 'Four bubbles! Slide four beads to the left. Tap a bead to slide it.',
+    voice:
+        'Four bubbles! Slide four beads to the left. Tap a bead to slide it.',
     emoji: '💧',
   ),
   Mission(
     id: 'count_2',
     station: StationKind.counting,
     title: 'Shell Search',
-    story: 'Mina the seahorse found seven little shells in the sand. Can you '
+    story:
+        'Mina the seahorse found seven little shells in the sand. Can you '
         'slide seven beads?',
     target: 7,
     hint: 'Slide five first, then two more. Five and two make seven.',
@@ -29,7 +32,8 @@ const List<Mission> kMissions = [
     id: 'count_3',
     station: StationKind.counting,
     title: 'Fish Parade',
-    story: 'Ten silver fish swim past the reef in a row. Count every one of '
+    story:
+        'Ten silver fish swim past the reef in a row. Count every one of '
         'them with the beads.',
     target: 10,
     hint: 'Use a whole row. Ten beads all the way to the left!',
@@ -40,7 +44,8 @@ const List<Mission> kMissions = [
     id: 'count_4',
     station: StationKind.counting,
     title: 'Crab Count',
-    story: 'Six cheeky crabs are hiding between the rocks. Slide one bead for '
+    story:
+        'Six cheeky crabs are hiding between the rocks. Slide one bead for '
         'each crab.',
     target: 6,
     hint: 'Five beads, then one more. That makes six.',
@@ -53,7 +58,8 @@ const List<Mission> kMissions = [
     id: 'add_1',
     station: StationKind.addition,
     title: 'Two Pearl Piles',
-    story: 'Two pearls in one pile and three in another. Slide all of them '
+    story:
+        'Two pearls in one pile and three in another. Slide all of them '
         'together to find the total.',
     target: 5,
     a: 2,
@@ -66,7 +72,8 @@ const List<Mission> kMissions = [
     id: 'add_2',
     station: StationKind.addition,
     title: 'Starfish Pair',
-    story: 'Four starfish on the left rock and three on the right rock. How '
+    story:
+        'Four starfish on the left rock and three on the right rock. How '
         'many starfish altogether?',
     target: 7,
     a: 4,
@@ -79,7 +86,8 @@ const List<Mission> kMissions = [
     id: 'add_3',
     station: StationKind.addition,
     title: 'High Five',
-    story: 'Five tiny turtles meet five more turtles. Slide all ten beads to '
+    story:
+        'Five tiny turtles meet five more turtles. Slide all ten beads to '
         'see the whole party.',
     target: 10,
     a: 5,
@@ -92,7 +100,8 @@ const List<Mission> kMissions = [
     id: 'add_4',
     station: StationKind.addition,
     title: 'Coral Climb',
-    story: 'Six coral flowers grow on one branch and two on another. Slide the '
+    story:
+        'Six coral flowers grow on one branch and two on another. Slide the '
         'beads to add them.',
     target: 8,
     a: 6,
@@ -107,7 +116,8 @@ const List<Mission> kMissions = [
     id: 'sub_1',
     station: StationKind.subtraction,
     title: 'Bubble Pop',
-    story: 'Eight bubbles are floating. Three pop! Slide three beads back to '
+    story:
+        'Eight bubbles are floating. Three pop! Slide three beads back to '
         'the right to see how many are left.',
     target: 5,
     start: 8,
@@ -120,7 +130,8 @@ const List<Mission> kMissions = [
     id: 'sub_2',
     station: StationKind.subtraction,
     title: 'Shells Away',
-    story: 'Ten shells sit on the shore. A wave carries four away. How many '
+    story:
+        'Ten shells sit on the shore. A wave carries four away. How many '
         'shells stay?',
     target: 6,
     start: 10,
@@ -133,7 +144,8 @@ const List<Mission> kMissions = [
     id: 'sub_3',
     station: StationKind.subtraction,
     title: 'Kelp Snack',
-    story: 'Seven little leaves are on the kelp. A hungry fish nibbles two. '
+    story:
+        'Seven little leaves are on the kelp. A hungry fish nibbles two. '
         'Slide two beads away.',
     target: 5,
     start: 7,
@@ -146,7 +158,8 @@ const List<Mission> kMissions = [
     id: 'sub_4',
     station: StationKind.subtraction,
     title: 'Turtle Trek',
-    story: 'Nine baby turtles start the race. Five dive into the deep. How '
+    story:
+        'Nine baby turtles start the race. Five dive into the deep. How '
         'many keep swimming?',
     target: 4,
     start: 9,
@@ -161,7 +174,8 @@ const List<Mission> kMissions = [
     id: 'jar_1',
     station: StationKind.jarimatika,
     title: 'Three Fingers',
-    story: 'Open your right hand. Show three with your fingers — your index, '
+    story:
+        'Open your right hand. Show three with your fingers — your index, '
         'middle and ring finger.',
     target: 3,
     hint: 'Right hand counts ones: index = 1, add middle = 2, add ring = 3.',
@@ -172,7 +186,8 @@ const List<Mission> kMissions = [
     id: 'jar_2',
     station: StationKind.jarimatika,
     title: 'Six Magic Fingers',
-    story: 'Six is a special Jarimatika shape: thumb and index together. Can '
+    story:
+        'Six is a special Jarimatika shape: thumb and index together. Can '
         'you make six?',
     target: 6,
     hint: 'Thumb plus index finger makes six on the right hand.',
@@ -183,7 +198,8 @@ const List<Mission> kMissions = [
     id: 'jar_3',
     station: StationKind.jarimatika,
     title: 'Eight in a Row',
-    story: 'Open four fingers and add the thumb. That is the Jarimatika way '
+    story:
+        'Open four fingers and add the thumb. That is the Jarimatika way '
         'to show eight.',
     target: 8,
     hint: 'Thumb, index, middle and ring — four fingers plus the thumb.',
@@ -194,7 +210,8 @@ const List<Mission> kMissions = [
     id: 'jar_4',
     station: StationKind.jarimatika,
     title: 'Ten at Last',
-    story: 'Ten moves to the other hand. Show one finger on your left hand — '
+    story:
+        'Ten moves to the other hand. Show one finger on your left hand — '
         'that means one ten.',
     target: 10,
     hint: 'Left hand counts tens. One left finger = ten.',

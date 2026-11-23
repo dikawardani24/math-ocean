@@ -13,10 +13,12 @@ chests in an ocean world guided by Tala the turtle.
   free play. Missions never time out and never punish a wrong answer.
 - **A real interactive 3D Kecrekan abacus.** The scene is loaded from
   `assets/3d/kecrekan/kecrekan.glb`; every one of the 100 beads is its own
-  glTF node with a spring solver, raycast picking, drag, tap, snap and reset.
-  There are no painted or flattened substitute beads.
-- **Jarimatika finger maths** with the canonical one-hand shapes, left hand for
-  tens and right hand for ones. Fingers can be opened and folded by tapping.
+  glTF node with a spring solver, screen-space picking, drag, tap, snap and
+  reset. There are no painted or flattened substitute beads.
+- **Jarimatika finger maths on a real 3D hand.** A locally bundled rigged hand
+  (`assets/3d/hand/hand.glb`) folds and extends each joint, with the left hand
+  mirrored at runtime for tens and the right hand for ones. No cloud model or
+  image sequence is involved.
 - **Evidence-based progression**, persistent stars, pearls, treasures, sound,
   voice and ambience settings.
 - **Audio, voice and animation everywhere:** bead clicks, group-of-five chimes,
@@ -45,12 +47,26 @@ The maths state in `lib/kecrekan/kecrekan_math.dart` is the single source of
 truth. Ten rows each hold ten beads; `rodCounts` drives every bead position.
 
 - Counted beads pack against the **screen-left** of the frame; uncounted beads
-  pack against the **screen-right**. The half-bead gap in the middle makes a
-  five split readable at a glance.
-- **Tap** a bead to slide it one place (count it, or send a counted bead back).
-- **Drag** a bead to move several places at once.
-- The spring solver in `kecrekan_controller.dart` gives each bead weight and
-  snaps it cleanly to the nearest slot.
+  pack against the **screen-right**. The two stops sit exactly ten bead slots
+  apart (`leftX = -1.10`, `rightX = 1.10`, `spacing = 0.22`), so the groups are
+  separated by exactly one empty slot. That slot is the five-bead marker at a
+  five/five split, and it is what makes a single-bead count land on a single
+  slot instead of flinging a bead across a hidden gap.
+- **Picking is forgiving.** A finger does not have to land on the mesh: the
+  nearest projected bead centre within 22–32 logical pixels is chosen, and the
+  row is locked from pointer-down so a wobble cannot grab a neighbour.
+- **Tap** moves exactly one bead: an uncounted bead joins the counted group, a
+  counted bead goes back. The total badge, counter and bead packing always
+  agree.
+- **Drag** moves any number of beads. The pan is anchored at the pointer-down
+  position, so the beads track the finger instead of losing the touch slop; a
+  little over half a slot plus a small dead band (0.12 slot) is needed before
+  the count steps, which stops a resting finger from flickering between two
+  values. Every frame is quantised from the anchor, so reversing direction
+  retraces the same counts without lifting, drifting or skipping.
+- The near-critically damped spring solver in `kecrekan_controller.dart` gives
+  each bead weight, clamps its velocity and settles it cleanly into its slot
+  without overlapping a neighbour.
 - **Reset** returns the frame to the mission's starting number.
 - The running total is always the sum of the ten row counts.
 
@@ -59,6 +75,10 @@ truth. Ten rows each hold ten beads; `rodCounts` drives every bead position.
 ## Jarimatika rules
 
 Right hand counts ones, left hand counts tens. Both hands use the same shape.
+The hands are skinned 3D meshes viewed from the palm side: tapping a finger
+animates that chain between folded and straight, the thumb tucks across the
+palm when folded, and the left hand is a true mirror of the right (geometry,
+lighting and culling included).
 
 | Number | Fingers open |
 | --- | --- |
@@ -137,7 +157,9 @@ lib/
     kecrekan_controller.dart    GLB load, camera, picking, spring simulation
     kecrekan_stage.dart         live 3D widget, gestures, loading/error states
   jarimatika/
-    hand_painter.dart           hand geometry, Jarimatika shapes, hit testing
+    jarimatika_math.dart        shapes, fold angles, pose mapping, hit testing
+    hand_3d.dart                rigged GLB hand, bone posing, lighting, picking
+    hand_painter.dart           compatibility re-export for older imports
   screens/
     home_screen.dart            reef map, turtle greeting
     station_screen.dart         mission list, mastery evidence, free play
@@ -148,11 +170,13 @@ lib/
   widgets/                      ocean background, turtle, shared UI kit
 assets/
   3d/kecrekan/                  .blend, .glb, textures, preview, asset docs
+  3d/hand/                      rigged Jarimatika hand .blend and .glb
   audio/                        generated SFX and looping ambience
   images/                       app icon and favicon source art
   fonts/                        Baloo 2 variable font
 tools/
-  blender/build_kecrekan.py     reproducible Blender generator
+  blender/build_kecrekan.py     reproducible Kecrekan generator
+  blender/build_hand.py         reproducible rigged-hand generator and previews
   audio/generate_audio.py       reproducible audio generator
 test/                           unit and widget tests
 docs/                           architecture and asset documentation
@@ -161,17 +185,33 @@ evidence-out/                   screenshots, recordings, POC checks
 
 ## Blender asset pipeline
 
-The playable frame is generated, not hand-modelled per session. Rebuild it with:
+The playable frame and the hands are generated, not hand-modelled per session.
+Rebuild them with:
 
 ```bash
 blender -b -P tools/blender/build_kecrekan.py -- --mode full
+blender -b -P tools/blender/build_hand.py -- --mode build
+blender -b -P tools/blender/build_hand.py -- --mode preview
 ```
 
-This writes `assets/3d/kecrekan/kecrekan.glb`, `kecrekan.blend`, the sea-glass
-texture and a studio preview. The scene contract, node names, coordinates and
-runtime mapping are documented in
+The Kecrekan build writes `assets/3d/kecrekan/kecrekan.glb`, `kecrekan.blend`,
+the sea-glass texture and a studio preview. The scene contract, node names,
+coordinates and runtime mapping are documented in
 [`docs/kecrekan-hierarchy.md`](docs/kecrekan-hierarchy.md) and
 [`assets/3d/kecrekan/README.md`](assets/3d/kecrekan/README.md).
+
+The hand build writes `assets/3d/hand/hand.glb` (rigged, ≈2.5 MB / ≈46.4k
+triangles) and `hand.blend`; preview mode renders the six Jarimatika poses to
+`evidence-out/hand/`. The mesh is modelled from lofted palm/finger profiles
+with knuckle creases, thenar/hypothenar volume, tapered fingers with palmar
+pads, a shorter thumb seated below the index knuckle, curved keratin nail
+shells on all five digits, vertex-colour skin and analytically weighted bones.
+The palm faces glTF −Z, so the runtime camera sits at −Z and the key light
+travels toward +Z; `evidence-out/hand/glb-minusZ-palmar.png` and
+`glb-plusZ-dorsal.png` verify that orientation from the exported asset itself.
+The runtime fold angles are kept identical to the generator's
+`FOLD`/`THUMB_FOLD`; the thumb's exported rolled frame is handled in
+`hand_3d.dart`.
 
 ## Tests and evidence
 
@@ -180,8 +220,10 @@ flutter analyze
 flutter test
 ```
 
-The tests cover bead maths and packing, Jarimatika shapes/validation, progress
-and mastery rules, and a home-screen widget smoke test.
+The suite has 38 tests covering bead maths and packing, tap/drag quantisation
+and reversal, Jarimatika shapes/validation, authored pose angles and projected
+finger hit testing, progress and mastery rules, and a home-screen widget smoke
+test.
 
 Final screenshots are in [`evidence-out/screenshots/`](evidence-out/screenshots/)
 and the verification log is in [`docs/testing.md`](docs/testing.md).

@@ -211,8 +211,8 @@ class _OceanPainter extends CustomPainter {
     path.lineTo(0, base);
     for (var i = 0; i <= 8; i++) {
       final x = size.width * i / 8;
-      final y = base - (i.isEven ? 20 : 54) -
-          math.sin(i * 1.3 + t * math.pi * 2) * 8;
+      final y =
+          base - (i.isEven ? 20 : 54) - math.sin(i * 1.3 + t * math.pi * 2) * 8;
       path.quadraticBezierTo(x - size.width / 16, y, x, y);
     }
     path
@@ -272,12 +272,14 @@ class _OceanPainter extends CustomPainter {
     for (final bubble in bubbles) {
       final progress = (t * bubble.speed + bubble.phase) % 1;
       final y = size.height * (1.04 - progress * 1.1);
-      final x = size.width * bubble.x +
+      final x =
+          size.width * bubble.x +
           math.sin(progress * math.pi * 6 + bubble.phase * 8) *
               size.width *
               bubble.drift;
       final r = bubble.size;
-      final alpha = bubble.opacity *
+      final alpha =
+          bubble.opacity *
           (0.4 + 0.6 * math.sin(progress * math.pi).clamp(0, 1));
       canvas.drawCircle(
         Offset(x, y),

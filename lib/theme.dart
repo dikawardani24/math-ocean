@@ -88,14 +88,14 @@ extension OceanTextX on BuildContext {
 
 /// A soft, toy-like shadow used by floating cards.
 List<BoxShadow> oceanShadow({double blur = 22, double y = 10}) => [
-      BoxShadow(
-        color: OceanColors.abyss.withValues(alpha: 0.28),
-        blurRadius: blur,
-        offset: Offset(0, y),
-      ),
-      BoxShadow(
-        color: Colors.white.withValues(alpha: 0.12),
-        blurRadius: 2,
-        offset: const Offset(0, -1),
-      ),
-    ];
+  BoxShadow(
+    color: OceanColors.abyss.withValues(alpha: 0.28),
+    blurRadius: blur,
+    offset: Offset(0, y),
+  ),
+  BoxShadow(
+    color: Colors.white.withValues(alpha: 0.12),
+    blurRadius: 2,
+    offset: const Offset(0, -1),
+  ),
+];
