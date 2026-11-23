@@ -50,3 +50,5 @@ app.*.map.json
 # Locally generated Coral Cove Blender outputs
 /artifacts/blender/coral_cove/
 /assets/3d/coral_cove/*.glb
+/assets/3d/characters/*.glb
+/artifacts/blender/tala/
