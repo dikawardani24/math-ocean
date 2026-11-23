@@ -269,7 +269,6 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       target: _target,
                       equation: mission?.question,
                       onSpeak: _speak,
-                      compact: true,
                     ),
                     const SizedBox(height: 6),
                     Expanded(
@@ -383,7 +382,6 @@ class _PromptCard extends StatelessWidget {
     required this.target,
     required this.onSpeak,
     this.equation,
-    this.compact = false,
   });
 
   final String emoji;
@@ -391,7 +389,6 @@ class _PromptCard extends StatelessWidget {
   final int target;
   final String? equation;
   final VoidCallback onSpeak;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -498,6 +495,9 @@ class _Chip extends StatelessWidget {
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
         style: TextStyle(
           color: foreground == Colors.white ? color : OceanColors.ink,
           fontWeight: FontWeight.w800,
