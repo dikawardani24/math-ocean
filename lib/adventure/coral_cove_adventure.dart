@@ -241,14 +241,23 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                               children: [
                                 const Positioned(
                                   bottom: 0,
-                                  child: Text('🪸', style: TextStyle(fontSize: 66)),
+                                  child: SizedBox(
+                                    width: 88,
+                                    height: 76,
+                                    child: CustomPaint(painter: _AnemonePainter()),
+                                  ),
                                 ),
                                 Positioned(
-                                  top: 0,
-                                  right: 4,
-                                  child: Text(
-                                    _clownfishEncountered ? '🐠✨' : '🐠',
-                                    style: const TextStyle(fontSize: 42),
+                                  top: 2,
+                                  right: 0,
+                                  child: SizedBox(
+                                    width: 64,
+                                    height: 46,
+                                    child: CustomPaint(
+                                      painter: _ClownfishPainter(
+                                        discovered: _clownfishEncountered,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -422,12 +431,19 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     height: 64,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: OceanColors.mint.withValues(alpha: 0.9),
+                      color: const Color(0xFF063F48).withValues(alpha: 0.28),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2.5),
-                      boxShadow: oceanShadow(blur: 14, y: 4),
+                      border: Border.all(
+                        color: OceanColors.mint.withValues(alpha: 0.65),
+                        width: 1.5,
+                      ),
+                      boxShadow: oceanShadow(blur: 12, y: 4),
                     ),
-                    child: const Text('🌿', style: TextStyle(fontSize: 32)),
+                    child: const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CustomPaint(painter: _SeagrassPainter()),
+                    ),
                   ),
                 ),
               ),
@@ -438,6 +454,159 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     }
     return widgets;
   }
+}
+
+/// Lightweight vector marine-life illustrations keep the reef readable
+/// at phone sizes without relying on platform emoji glyphs.
+class _SeagrassPainter extends CustomPainter {
+  const _SeagrassPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stemPaint = Paint()
+      ..color = const Color(0xFF9BE36C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round;
+    final leafPaint = Paint()
+      ..color = const Color(0xFF55C978)
+      ..style = PaintingStyle.fill;
+    for (var i = 0; i < 3; i++) {
+      final x = size.width * (0.28 + i * 0.22);
+      final path = Path()
+        ..moveTo(x, size.height * 0.92)
+        ..cubicTo(x - 5, size.height * 0.65, x + 7, size.height * 0.35, x, 4);
+      canvas.drawPath(path, stemPaint);
+      for (var j = 0; j < 3; j++) {
+        final y = size.height * (0.72 - j * 0.2);
+        final direction = ((i + j).isEven ? 1 : -1).toDouble();
+        final leaf = Path()
+          ..moveTo(x, y)
+          ..quadraticBezierTo(
+            x + direction * 15,
+            y - 12,
+            x + direction * 13,
+            y - 2,
+          )
+          ..quadraticBezierTo(x + direction * 5, y + 3, x, y);
+        canvas.drawPath(leaf, leafPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SeagrassPainter oldDelegate) => false;
+}
+
+class _AnemonePainter extends CustomPainter {
+  const _AnemonePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width * 0.5, size.height * 0.76);
+    final tentacle = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 11; i++) {
+      final angle = math.pi + (math.pi * i / 10);
+      final start = Offset(
+        center.dx + math.cos(angle) * 10,
+        center.dy + math.sin(angle) * 4,
+      );
+      final end = Offset(
+        center.dx + math.cos(angle) * (size.width * 0.43),
+        center.dy + math.sin(angle) * (size.height * 0.67),
+      );
+      tentacle.color = i.isEven
+          ? const Color(0xFFFF8DAA)
+          : const Color(0xFFFFC0A5);
+      final path = Path()
+        ..moveTo(start.dx, start.dy)
+        ..quadraticBezierTo(
+          center.dx + math.cos(angle) * size.width * 0.34 + (i % 3 - 1) * 5,
+          center.dy + math.sin(angle) * size.height * 0.38,
+          end.dx,
+          end.dy,
+        );
+      canvas.drawPath(path, tentacle);
+      canvas.drawCircle(end, 3, Paint()..color = tentacle.color);
+    }
+    final base = Rect.fromCenter(
+      center: Offset(center.dx, center.dy + 7),
+      width: size.width * 0.46,
+      height: size.height * 0.25,
+    );
+    canvas.drawOval(base, Paint()..color = const Color(0xFFE77F91));
+    canvas.drawOval(
+      base.deflate(5),
+      Paint()..color = const Color(0xFFFFB0A7),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _AnemonePainter oldDelegate) => false;
+}
+
+class _ClownfishPainter extends CustomPainter {
+  const _ClownfishPainter({required this.discovered});
+  final bool discovered;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final body = Path()
+      ..moveTo(size.width * 0.12, size.height * 0.5)
+      ..quadraticBezierTo(size.width * 0.34, -size.height * 0.05, size.width * 0.78, size.height * 0.34)
+      ..quadraticBezierTo(size.width * 0.96, size.height * 0.5, size.width * 0.78, size.height * 0.66)
+      ..quadraticBezierTo(size.width * 0.34, size.height * 1.05, size.width * 0.12, size.height * 0.5);
+    canvas.drawPath(
+      body,
+      Paint()..color = const Color(0xFFFF8A28),
+    );
+    final tail = Path()
+      ..moveTo(size.width * 0.14, size.height * 0.5)
+      ..lineTo(0, size.height * 0.18)
+      ..quadraticBezierTo(size.width * 0.04, size.height * 0.5, 0, size.height * 0.82)
+      ..close();
+    canvas.drawPath(tail, Paint()..color = const Color(0xFFFFA33D));
+    final stripe = Paint()
+      ..color = const Color(0xFFFFF7E8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.105;
+    for (final x in [0.34, 0.68]) {
+      canvas.drawLine(
+        Offset(size.width * x, size.height * 0.13),
+        Offset(size.width * x, size.height * 0.87),
+        stripe,
+      );
+    }
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.82, size.height * 0.43),
+        width: 5,
+        height: 5,
+      ),
+      Paint()..color = const Color(0xFF172B35),
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.835, size.height * 0.415),
+      1.2,
+      Paint()..color = Colors.white,
+    );
+    if (discovered) {
+      final sparkle = Paint()
+        ..color = const Color(0xFFFFE58A)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      final point = Offset(size.width * 0.9, size.height * 0.12);
+      canvas.drawLine(point.translate(-4, 0), point.translate(4, 0), sparkle);
+      canvas.drawLine(point.translate(0, -4), point.translate(0, 4), sparkle);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ClownfishPainter oldDelegate) =>
+      discovered != oldDelegate.discovered;
 }
 
 class _ReefWorldBackdrop extends StatelessWidget {
