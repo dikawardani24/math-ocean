@@ -17,382 +17,381 @@ import '../widgets/coral_cove_3d_backdrop.dart';
 import '../widgets/turtle_companion.dart';
 import '../widgets/ui_kit.dart';
 
-/// True game adventure for Coral Cove: seamless reef exploration,
-/// tactile seagrass gathering, and organic coral abacus counting.
+
+enum _CoralStep { greeting, counting, collecting, feeding, discovery }
+
 class CoralCoveAdventure extends StatefulWidget {
   const CoralCoveAdventure({super.key});
-
   @override
   State<CoralCoveAdventure> createState() => _CoralCoveAdventureState();
 }
 
 class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     with TickerProviderStateMixin {
-  static const _adventureId = 'coral_cove';
-  static int? _lastTargetSnacks;
-
+  static int? _lastTarget;
   late final OceanCreature _turtle;
   late final AnimationController _swim;
   late final AnimationController _pulse;
-  late KecrekanController _kecrekan;
-
-  int _targetSnacks = 4;
-  final Set<int> _collectedSnacks = {};
-  bool _completed = false;
-  bool _celebrating = false;
-  bool _turtleEncountered = false;
-  bool _clownfishEncountered = false;
-  String _dialogue = 'Look around the reef. Tap a sea friend to see what it does!';
+  late final KecrekanController _kecrekan;
+  int _target = 3;
+  final Set<int> _collected = {};
+  _CoralStep _step = _CoralStep.greeting;
+  bool _recorded = false;
+  String _dialogue = 'I am hungry! Can you help me find some seagrass?';
 
   @override
   void initState() {
     super.initState();
     _turtle = creatureById('green_turtle')!;
-    final rng = math.Random();
-    // Keep each visit feeling fresh; the next reef task cannot repeat the
-    // previous target during this app session.
-    final choices = [2, 3, 4, 5]..remove(_lastTargetSnacks);
-    _targetSnacks = choices[rng.nextInt(choices.length)];
-    _lastTargetSnacks = _targetSnacks;
+    final choices = [2, 3, 4, 5]..remove(_lastTarget);
+    _target = choices[math.Random().nextInt(choices.length)];
+    _lastTarget = _target;
     _kecrekan = KecrekanController(
       initialCount: 0,
-      activeRowCount: KecrekanMath.rowsForChallenge(start: 0, target: _targetSnacks),
+      activeRowCount: KecrekanMath.rowsForChallenge(start: 0, target: _target),
     );
-
-    _swim = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat();
-
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
+    _swim = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat();
+    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+    _kecrekan.addListener(_onBeadsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AudioService.instance.speak(_dialogue);
+      if (mounted) AudioService.instance.speak(_dialogue);
     });
-
-    // Listen to abacus changes for organic real-time feedback
-    _kecrekan.addListener(_onAbacusChanged);
   }
 
   @override
   void dispose() {
-    _kecrekan.removeListener(_onAbacusChanged);
+    _kecrekan.removeListener(_onBeadsChanged);
+    _kecrekan.dispose();
     _swim.dispose();
     _pulse.dispose();
-    _kecrekan.dispose();
     AudioService.instance.stopSpeaking();
     super.dispose();
   }
 
-  void _speak(String text) {
-    setState(() => _dialogue = text);
-    AudioService.instance.speak(text);
+  void _say(String message) {
+    if (!mounted) return;
+    setState(() => _dialogue = message);
+    AudioService.instance.speak(message);
   }
 
-  void _encounterTurtle() {
-    final firstEncounter = !_turtleEncountered;
-    setState(() => _turtleEncountered = true);
-    if (firstEncounter) {
-      ProgressScope.read(context).discoverCreature(_turtle.id);
-      _speak(_turtle.encounterLines.first);
-    } else {
-      _speak(_turtle.encounterLines[1]);
-    }
+  void _startCounting() {
+    setState(() => _step = _CoralStep.counting);
+    _say('We need ' + _target.toString() + ' pieces of seagrass. Make that number on the Kecrekan!');
   }
 
-  void _encounterClownfish() {
-    final clownfish = creatureById('clownfish')!;
-    final firstEncounter = !_clownfishEncountered;
-    setState(() => _clownfishEncountered = true);
-    if (firstEncounter) {
-      ProgressScope.read(context).discoverCreature(clownfish.id);
-      _speak(clownfish.encounterLines.first);
-    } else {
-      _speak(clownfish.encounterLines.last);
-    }
-  }
-
-  void _collectSnack(int index) {
-    // Let children explore and collect every visible item freely. Counting is
-    // a separate, connected action: the Kecrekan total must match the number
-    // of seagrass they discovered before the reef celebrates.
-    if (_collectedSnacks.contains(index) || _completed) return;
-
-    setState(() {
-      _collectedSnacks.add(index);
-    });
-    AudioService.instance.sfx('bead_slide');
-    Feel.snap();
-
-    final count = _collectedSnacks.length;
-    _speak(
-      count == _targetSnacks
-          ? 'You found all the seagrass! Count them on the coral abacus.'
-          : 'You found $count seagrass! Find the rest, then count them on the coral abacus.',
-    );
-
-    // Also handle the case where the child had already set the matching bead
-    // total before collecting the final seagrass.
-    if (count == _targetSnacks && _kecrekan.total == count) {
-      _triggerSuccess();
-    }
-  }
-
-  void _onAbacusChanged() {
-    if (_completed) return;
+  void _onBeadsChanged() {
+    if (_step != _CoralStep.counting) return;
     final total = _kecrekan.total;
-    final collected = _collectedSnacks.length;
-
-    if (total == collected && collected == _targetSnacks) {
-      _triggerSuccess();
-    } else if (total == collected && collected > 0) {
-      _speak('That is one bead for each seagrass! Find the next piece.');
-    } else if (total > collected) {
-      _speak('One bead for each seagrass. Slide one bead back.');
-    } else if (total < collected) {
-      _speak('You found another piece of seagrass. Move one bead to count it!');
+    if (total == _target) {
+      setState(() => _step = _CoralStep.collecting);
+      Feel.success();
+      AudioService.instance.sfx('mission_complete');
+      _say('That is ' + _target.toString() + '! Now find the seagrass around the reef.');
+    } else if (total > _target) {
+      _say('Oops, that is too many. Slide a bead back.');
     }
   }
 
-  void _triggerSuccess() {
-    setState(() {
-      _completed = true;
-      _celebrating = true;
-    });
+  void _collectGrass(int index) {
+    if (_step != _CoralStep.collecting || _collected.contains(index)) return;
+    setState(() => _collected.add(index));
+    Feel.snap();
+    AudioService.instance.sfx('bead_slide');
+    final count = _collected.length;
+    if (count == _target) {
+      setState(() => _step = _CoralStep.feeding);
+      _say('You found all the seagrass! Take it to the turtle.');
+    } else {
+      _say('You found ' + count.toString() + '! Keep looking.');
+    }
+  }
 
+  void _feedTurtle() {
+    if (_step != _CoralStep.feeding || _recorded) return;
+    _recorded = true;
+    setState(() => _step = _CoralStep.discovery);
     final progress = ProgressScope.read(context);
-    final mission = Mission(
-      id: 'coral_turtle_adventure',
-      station: StationKind.counting,
-      title: 'Coral Cove Feast',
-      story: 'Feed the green sea turtle with reef seagrass and coral beads.',
-      target: _targetSnacks,
-      emoji: '🐢',
+    progress.discoverCreature(_turtle.id);
+    progress.recordSuccess(
+      Mission(
+        id: 'coral_turtle_adventure',
+        station: StationKind.counting,
+        title: 'Coral Cove Feast',
+        story: 'Count and collect seagrass, then feed the green sea turtle.',
+        target: _target,
+        emoji: '🐢',
+      ),
+      stars: 3,
+      firstTry: true,
     );
-    progress.recordSuccess(mission, stars: 3, firstTry: true);
-    progress.completeAdventure(_adventureId);
+    progress.completeAdventure('coral_cove');
     progress.addPearls(1);
-
-    AudioService.instance.sfx('mission_complete');
     Feel.success();
-    _speak('Amazing! You helped the turtle find her seagrass. What else can you discover in the reef?');
+    AudioService.instance.sfx('mission_complete');
+    _say('Yum! Thank you! Sea turtles help keep seagrass meadows healthy.');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF063D4B),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Living reef backdrop with dynamic light rays
           const CoralCove3DBackdrop(),
-
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(context),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: TurtleTalk(
-                    message: _dialogue,
-                    size: 80,
-                    onTap: () => AudioService.instance.speak(_dialogue),
-                    cheering: _completed,
-                  ),
-                ),
+                _header(context),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => Stack(
-                    children: [
-                      // Swimming turtle companion
-                      AnimatedBuilder(
-                        animation: _swim,
-                        builder: (context, _) {
-                          final x = math.sin(_swim.value * math.pi * 2) * 20;
-                          final y = math.cos(_swim.value * math.pi * 4) * 8;
-                          return Positioned(
-                            left: MediaQuery.of(context).size.width * 0.35 + x,
-                            top: 40 + y,
-                            child: TurtleCompanion(
-                              size: 112,
-                              cheering: _completed,
-                              onTap: _encounterTurtle,
-                            ),
-                          );
-                        },
-                      ),
-
-                      // A clownfish peeks out of its anemone. Discovery is
-                      // recorded only when the child chooses to meet it.
-                      Positioned(
-                        left: MediaQuery.of(context).size.width * 0.12,
-                        top: 176,
-                        child: GestureDetector(
-                          onTap: _encounterClownfish,
-                          child: SizedBox(
-                            width: 104,
-                            height: 104,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Positioned(
-                                  bottom: 0,
-                                  child: SizedBox(
-                                    width: 88,
-                                    height: 76,
-                                    child: CustomPaint(painter: _AnemonePainter()),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 2,
-                                  right: 0,
-                                  child: SizedBox(
-                                    width: 64,
-                                    height: 46,
-                                    child: CustomPaint(
-                                      painter: _ClownfishPainter(
-                                        discovered: _clownfishEncountered,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Floating seagrass items in the reef
-                      ..._buildSeagrassItems(context, constraints),
-
-                      // Organic coral abacus (Kecrekan) embedded at the bottom of the reef world
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 8,
-                        height: 184,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF043B46).withValues(alpha: 0.88),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: OceanColors.aqua.withValues(alpha: 0.6),
-                              width: 2.5,
-                            ),
-                            boxShadow: oceanShadow(blur: 16, y: 6),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text('🪸 Coral Abacus ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
-                                  Text('(${_kecrekan.total}/$_targetSnacks)', style: const TextStyle(color: OceanColors.sunny, fontWeight: FontWeight.w800, fontSize: 14)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Expanded(
-                                child: KecrekanStage(
-                                  controller: _kecrekan,
-                                  interactive: !_completed,
-                                  showTotal: false,
-                                  showResetButton: false,
-                                  showHintOverlay: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    child: switch (_step) {
+                      _CoralStep.greeting => _greeting(),
+                      _CoralStep.counting => _counting(),
+                      _CoralStep.collecting => _collecting(),
+                      _CoralStep.feeding => _feeding(),
+                      _CoralStep.discovery => _discovery(context),
+                    },
                   ),
                 ),
               ],
             ),
           ),
-
-          if (_celebrating)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.4),
-                child: Center(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: OceanColors.shell,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: oceanShadow(blur: 24, y: 10),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🐢✨', style: TextStyle(fontSize: 56)),
-                        const SizedBox(height: 12),
-                        Text(
-                          _turtle.name,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: OceanColors.ink,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _turtle.habitat,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: OceanColors.ink,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        BigButton(
-                          label: 'Explore More Ocean',
-                          icon: Icons.explore_rounded,
-                          onTap: () => Navigator.of(context).pop(true),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _greeting() => Center(
+    key: const ValueKey('greeting'),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedBuilder(
+            animation: _swim,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, math.sin(_swim.value * math.pi * 2) * 8),
+              child: child,
+            ),
+            child: TurtleCompanion(size: 196, onTap: () => AudioService.instance.speak(_dialogue)),
+          ),
+          const SizedBox(height: 14),
+          SpeechBubble(message: _dialogue),
+          const SizedBox(height: 24),
+          BigButton(label: 'Help the turtle!', icon: Icons.favorite_rounded, onTap: _startCounting),
+        ],
+      ),
+    ),
+  );
+
+  Widget _counting() => Padding(
+    key: const ValueKey('counting'),
+    padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
+    child: Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: OceanColors.shell, borderRadius: BorderRadius.circular(20)),
+          child: Column(
+            children: [
+              const Text('HOW MUCH SEAGRASS?', style: TextStyle(color: OceanColors.inkSoft, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_target, (_) => const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: SizedBox(width: 26, height: 36, child: CustomPaint(painter: _SeagrassPainter())),
+                )),
+              ),
+              Text('Make ' + _target.toString() + ' on your Kecrekan', style: const TextStyle(color: OceanColors.ink, fontSize: 16, fontWeight: FontWeight.w800)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: KecrekanStage(
+            controller: _kecrekan,
+            interactive: true,
+            showTotal: true,
+            showResetButton: true,
+            showHintOverlay: true,
+            hint: 'Move the beads to make the same amount',
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _collecting() => LayoutBuilder(
+    key: const ValueKey('collecting'),
+    builder: (context, constraints) {
+      const size = 68.0;
+      const positions = [
+        Offset(.17, .10), Offset(.76, .04), Offset(.22, .70),
+        Offset(.80, .66), Offset(.50, .38),
+      ];
+      final freeHeight = math.max(0.0, constraints.maxHeight - 224 - size);
+      return Stack(
+        children: [
+          Positioned(
+            left: 10, right: 10, top: 4,
+            child: Column(
+              children: [
+                SpeechBubble(message: _dialogue, onTap: () => AudioService.instance.speak(_dialogue)),
+                const SizedBox(height: 8),
+                _FoodBasket(count: _collected.length, target: _target),
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 10,
+            left: constraints.maxWidth * .34,
+            child: TurtleCompanion(size: 112),
+          ),
+          for (var i = 0; i < _target; i++)
+            if (!_collected.contains(i))
+              Positioned(
+                left: (constraints.maxWidth * positions[i].dx - size / 2).clamp(8.0, math.max(8.0, constraints.maxWidth - size - 8)),
+                top: 132 + freeHeight * positions[i].dy,
+                width: size,
+                height: size,
+                child: AnimatedBuilder(
+                  animation: _pulse,
+                  builder: (context, child) => Transform.scale(
+                    scale: 1 + math.sin(_pulse.value * math.pi + i) * .07,
+                    child: child,
+                  ),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _collectGrass(i),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF063F48).withValues(alpha: .5),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: OceanColors.mint, width: 2),
+                        boxShadow: oceanShadow(blur: 14, y: 5),
+                      ),
+                      alignment: Alignment.center,
+                      child: const SizedBox(width: 48, height: 48, child: CustomPaint(painter: _SeagrassPainter())),
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      );
+    },
+  );
+
+  Widget _feeding() => Center(
+    key: const ValueKey('feeding'),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TurtleCompanion(size: 180),
+          const SizedBox(height: 12),
+          SpeechBubble(message: _dialogue),
+          const SizedBox(height: 22),
+          GestureDetector(
+            onTap: _feedTurtle,
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, child) => Transform.scale(scale: 1 + _pulse.value * .035, child: child),
+              child: _FoodBasket(count: _collected.length, target: _target, large: true),
+            ),
+          ),
+          const SizedBox(height: 18),
+          BigButton(label: 'Feed the turtle!', icon: Icons.restaurant_rounded, onTap: _feedTurtle),
+          const SizedBox(height: 8),
+          const Text('Tap the basket to share the seagrass', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    ),
+  );
+
+  Widget _discovery(BuildContext context) => Center(
+    key: const ValueKey('discovery'),
+    child: Padding(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TurtleCompanion(size: 184, cheering: true),
+          const SizedBox(height: 10),
+          SpeechBubble(message: _dialogue),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: OceanColors.shell, borderRadius: BorderRadius.circular(22)),
+            child: Column(
+              children: [
+                const Text('🐢  OCEAN DISCOVERY', style: TextStyle(color: OceanColors.inkSoft, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                Text(_turtle.name, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: OceanColors.ink, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Text(_turtle.habitat + '\nSea turtles graze on seagrass and help keep underwater meadows healthy.', textAlign: TextAlign.center, style: const TextStyle(color: OceanColors.ink, fontWeight: FontWeight.w600, height: 1.35)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          BigButton(label: 'Explore the reef', icon: Icons.explore_rounded, onTap: () => Navigator.of(context).pop(true)),
+        ],
+      ),
+    ),
+  );
+
+  Widget _header(BuildContext context) {
+    final label = switch (_step) {
+      _CoralStep.greeting => 'Meet the turtle',
+      _CoralStep.counting => 'Count the food',
+      _CoralStep.collecting => 'Collect seagrass',
+      _CoralStep.feeding => 'Feeding time',
+      _CoralStep.discovery => 'Ocean discovery',
+    };
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
           RoundIconButton(
             icon: Icons.arrow_back_rounded,
             size: 44,
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withValues(alpha: .2),
             iconColor: OceanColors.foam,
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () {
+              if (_step == _CoralStep.greeting) {
+                Navigator.of(context).pop();
+              } else if (_step == _CoralStep.counting) {
+                setState(() => _step = _CoralStep.greeting);
+              } else if (_step == _CoralStep.collecting) {
+                setState(() => _step = _CoralStep.counting);
+              } else if (_step == _CoralStep.feeding) {
+                setState(() => _step = _CoralStep.collecting);
+              } else {
+                Navigator.of(context).pop(true);
+              }
+            },
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              'Coral Cove',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: OceanColors.foam,
-                fontWeight: FontWeight.w900,
-                shadows: const [Shadow(color: Color(0x66000000), blurRadius: 6)],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Coral Cove', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: OceanColors.foam, fontWeight: FontWeight.w900)),
+                Text(label, style: const TextStyle(color: OceanColors.mint, fontSize: 12, fontWeight: FontWeight.w700)),
+              ],
             ),
           ),
           OceanPill(
-            label: '${_collectedSnacks.length}/$_targetSnacks Snacks',
-            emoji: '🌿',
+            label: _step == _CoralStep.collecting || _step == _CoralStep.feeding
+                ? _collected.length.toString() + '/' + _target.toString()
+                : _target.toString() + ' 🌿',
+            emoji: '🐢',
             compact: true,
             color: OceanColors.mint,
           ),
@@ -400,83 +399,38 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       ),
     );
   }
+}
 
-  List<Widget> _buildSeagrassItems(
-    BuildContext context,
-    BoxConstraints constraints,
-  ) {
-    // The abacus owns the bottom 244 logical pixels. Collectibles are
-    // positioned only in the remaining playfield, never beneath its hit area.
-    const itemSize = 64.0;
-    const reservedBottom = 244.0;
-    final playfieldHeight = math.max(
-      0.0,
-      constraints.maxHeight - reservedBottom,
-    );
-    final maxTop = math.max(0.0, playfieldHeight - itemSize).toDouble();
-    final positions = [
-      const Offset(0.16, 0.12),
-      const Offset(0.76, 0.08),
-      const Offset(0.22, 0.68),
-      const Offset(0.80, 0.62),
-      const Offset(0.50, 0.36),
-    ];
+class _FoodBasket extends StatelessWidget {
+  const _FoodBasket({required this.count, required this.target, this.large = false});
+  final int count;
+  final int target;
+  final bool large;
 
-    final widgets = <Widget>[];
-    for (var i = 0; i < _targetSnacks; i++) {
-      if (_collectedSnacks.contains(i)) continue;
-      final pos = positions[i % positions.length];
-      final left = (constraints.maxWidth * pos.dx - itemSize / 2)
-          .clamp(
-            8.0,
-            math.max(8.0, constraints.maxWidth - itemSize - 8.0),
-          )
-          .toDouble();
-      final top = (maxTop * pos.dy).clamp(0.0, maxTop).toDouble();
-      widgets.add(
-        Positioned(
-          left: left,
-          top: top,
-          width: itemSize,
-          height: itemSize,
-          child: AnimatedBuilder(
-            animation: _pulse,
-            builder: (context, child) {
-              final scale =
-                  1.0 + math.sin(_pulse.value * math.pi + i) * 0.08;
-              return Transform.scale(
-                scale: scale,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _collectSnack(i),
-                  child: Container(
-                    width: itemSize,
-                    height: itemSize,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF063F48).withValues(alpha: 0.28),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: OceanColors.mint.withValues(alpha: 0.65),
-                        width: 1.5,
-                      ),
-                      boxShadow: oceanShadow(blur: 12, y: 4),
-                    ),
-                    child: const SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: CustomPaint(painter: _SeagrassPainter()),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.symmetric(horizontal: large ? 24 : 16, vertical: large ? 16 : 9),
+    decoration: BoxDecoration(
+      color: OceanColors.shell,
+      borderRadius: BorderRadius.circular(large ? 24 : 18),
+      border: Border.all(color: OceanColors.sunny, width: 2),
+      boxShadow: oceanShadow(blur: 14, y: 5),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('🧺', style: TextStyle(fontSize: large ? 46 : 26)),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$count / $target', style: TextStyle(color: OceanColors.ink, fontSize: large ? 25 : 18, fontWeight: FontWeight.w900)),
+            Text('SEAGRASS', style: TextStyle(color: OceanColors.inkSoft, fontSize: large ? 11 : 9, fontWeight: FontWeight.w900, letterSpacing: .8)),
+          ],
         ),
-      );
-    }
-    return widgets;
-  }
+      ],
+    ),
+  );
 }
 
 /// Lightweight vector marine-life illustrations keep the reef readable
