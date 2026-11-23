@@ -21,6 +21,7 @@ class Turtle3DCompanion extends StatelessWidget {
       width: size,
       height: size * .88,
       child: SceneView.declarative(
+        key: ValueKey(animation),
         camera: PerspectiveCamera(
           position: vm.Vector3(0, -5.1, 2.05),
           target: vm.Vector3(0, -.15, .08),
