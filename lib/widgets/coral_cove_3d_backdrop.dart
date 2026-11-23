@@ -61,24 +61,35 @@ class _CoralCove3DBackdropState extends State<CoralCove3DBackdrop> {
         intensity: 1.25,
       );
 
-      // Keep the known-visible GLB orientation. The fixed portrait camera
-      // guessed the exported coordinate axes incorrectly and looked away
-      // from the reef. Frame the imported model first; portrait viewport
-      // projection is then applied by SceneView itself.
+      // The GLB's combined bounds include the very wide seabed plane and
+      // distant ocean wall. PerspectiveCamera.framing() fits a bounding
+      // sphere, so those broad horizontal dimensions push the reef into a
+      // small strip on a portrait phone. Fit the camera to the scene's
+      // vertical extent instead: the vertical field of view is independent
+      // of viewport aspect ratio, while the narrower portrait width naturally
+      // crops the far left/right edges.
       final bounds = model.combinedWorldBounds;
+      const fovY = 48 * math.pi / 180;
+      const viewDirection = vm.Vector3(0, -0.16, -1);
       if (bounds != null) {
-        _camera = PerspectiveCamera.framing(
-          bounds,
-          direction: vm.Vector3(0, -0.16, -1),
-          fovRadiansY: 54 * math.pi / 180,
-          margin: 0.78,
+        final center = bounds.center;
+        final verticalExtent = (bounds.max.y - bounds.min.y).abs();
+        final safeHeight = math.max(verticalExtent, 1.0);
+        final distance = safeHeight / (2 * math.tan(fovY / 2)) * 0.88;
+        final direction = viewDirection.normalized();
+        _camera = PerspectiveCamera(
+          position: center + direction * distance,
+          target: center,
+          fovRadiansY: fovY,
+          fovNear: math.max(distance * 0.01, 0.01),
+          fovFar: distance + safeHeight * 4,
         );
       } else {
-        // This fallback preserves the GLB's known viewing direction.
+        // Preserve the known-visible imported-GLB viewing direction.
         _camera = PerspectiveCamera(
           position: vm.Vector3(0, 7, -18),
           target: vm.Vector3(0, 1, 0),
-          fovRadiansY: 54 * math.pi / 180,
+          fovRadiansY: fovY,
         );
       }
 
