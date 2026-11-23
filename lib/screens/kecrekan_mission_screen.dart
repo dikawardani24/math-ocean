@@ -40,6 +40,7 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
 
   int _attempts = 0;
   bool _usedHint = false;
+  bool _promptExpanded = true;
   bool _solved = false;
   bool _celebrate = false;
   String _encouragement = '';
@@ -269,10 +270,21 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                       target: _target,
                       equation: mission?.question,
                       onSpeak: _speak,
+                      onCollapse: () => setState(() => _promptExpanded = false),
                     ),
-                    const SizedBox(height: 6),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeInOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: _promptExpanded
+                          ? const SizedBox(height: 6)
+                          : const SizedBox.shrink(),
+                    ),
                     Expanded(
-                      child: AnimatedBuilder(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: AnimatedBuilder(
                         animation: _shake,
                         builder: (context, child) {
                           final t = _shake.value;
@@ -282,14 +294,35 @@ class _KecrekanMissionScreenState extends State<KecrekanMissionScreen>
                             child: child,
                           );
                         },
-                        child: KecrekanStage(
-                          controller: _controller,
-                          onInteraction: () {
-                            if (_encouragement.isNotEmpty) {
-                              setState(() => _encouragement = '');
-                            }
-                          },
-                        ),
+                            child: KecrekanStage(
+                              controller: _controller,
+                              onInteraction: () {
+                                if (_promptExpanded || _encouragement.isNotEmpty) {
+                                  setState(() {
+                                    _promptExpanded = false;
+                                    _encouragement = '';
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          if (!_promptExpanded)
+                            Positioned(
+                              top: 10,
+                              left: 76,
+                              right: 76,
+                              child: Center(
+                                child: _MissionPill(
+                                  emoji: mission?.emoji ?? '💧',
+                                  title: mission?.title ?? 'Free play',
+                                  target: _target,
+                                  onTap: () => setState(
+                                    () => _promptExpanded = true,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     if (_encouragement.isNotEmpty)
@@ -381,6 +414,7 @@ class _PromptCard extends StatelessWidget {
     required this.story,
     required this.target,
     required this.onSpeak,
+    required this.onCollapse,
     this.equation,
   });
 
@@ -389,6 +423,7 @@ class _PromptCard extends StatelessWidget {
   final int target;
   final String? equation;
   final VoidCallback onSpeak;
+  final VoidCallback onCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -431,7 +466,7 @@ class _PromptCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     InkWell(
                       onTap: onSpeak,
                       borderRadius: BorderRadius.circular(20),
@@ -441,6 +476,19 @@ class _PromptCard extends StatelessWidget {
                           Icons.volume_up_rounded,
                           color: OceanColors.teal,
                           size: 21,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    InkWell(
+                      onTap: onCollapse,
+                      borderRadius: BorderRadius.circular(20),
+                      child: const Padding(
+                        padding: EdgeInsets.all(5),
+                        child: Icon(
+                          Icons.keyboard_arrow_up_rounded,
+                          color: OceanColors.teal,
+                          size: 22,
                         ),
                       ),
                     ),
@@ -472,6 +520,86 @@ class _PromptCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MissionPill extends StatelessWidget {
+  const _MissionPill({
+    required this.emoji,
+    required this.title,
+    required this.target,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String title;
+  final int target;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 220),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: OceanColors.shell.withValues(alpha: 0.97),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white, width: 1.5),
+            boxShadow: oceanShadow(blur: 12, y: 4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 17)),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: OceanColors.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    fontFamily: 'Baloo2',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: OceanColors.teal,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$_targetLabel',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    fontFamily: 'Baloo2',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 3),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 17,
+                color: OceanColors.teal,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String get _targetLabel => 'Make $target';
 }
 
 class _Chip extends StatelessWidget {
