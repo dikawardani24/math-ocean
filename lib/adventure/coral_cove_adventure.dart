@@ -132,6 +132,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
           ? 'You found all the seagrass! Count them on the coral abacus.'
           : 'You found $count seagrass! Find the rest, then count them on the coral abacus.',
     );
+
+    // Also handle the case where the child had already set the matching bead
+    // total before collecting the final seagrass.
+    if (count == _targetSnacks && _kecrekan.total == count) {
+      _triggerSuccess();
+    }
   }
 
   void _onAbacusChanged() {
