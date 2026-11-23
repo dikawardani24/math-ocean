@@ -413,6 +413,16 @@ class KecrekanController extends ChangeNotifier {
       final p = bottom.position;
       bottom.position = vm.Vector3(p.x, -frameHalfHeight, p.z);
     }
+    final topAccent = _frameNodes['Frame_TopAccent'];
+    if (topAccent != null) {
+      final p = topAccent.position;
+      topAccent.position = vm.Vector3(p.x, frameHalfHeight - 0.125, p.z);
+    }
+    final bottomAccent = _frameNodes['Frame_BottomAccent'];
+    if (bottomAccent != null) {
+      final p = bottomAccent.position;
+      bottomAccent.position = vm.Vector3(p.x, -frameHalfHeight + 0.125, p.z);
+    }
     final postScaleY = (frameHalfHeight * 2) / 3.20;
     for (final name in ['Frame_LeftPost', 'Frame_RightPost']) {
       final post = _frameNodes[name];
