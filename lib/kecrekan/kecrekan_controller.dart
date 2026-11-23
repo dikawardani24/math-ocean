@@ -46,6 +46,8 @@ class KecrekanController extends ChangeNotifier {
   final List<KecrekanBead> beads = [];
 
   PerspectiveCamera? _camera;
+  KecrekanBead? _draggedBead;
+  double _dragOffset = 0;
 
   bool ready = false;
   String? error;
@@ -126,12 +128,19 @@ class KecrekanController extends ChangeNotifier {
     math.setTotal(value);
     for (final bead in beads) {
       bead.x = KecrekanMath.beadX(bead.index, math.countFor(bead.rod));
+      bead.velocity = 0;
       bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
     }
   }
 
   void resetTo(int value) {
+    _draggedBead = null;
     math.setTotal(value);
+    for (final bead in beads) {
+      bead.x = KecrekanMath.beadX(bead.index, math.countFor(bead.rod));
+      bead.velocity = 0;
+      bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
+    }
     notifyListeners();
   }
 
@@ -192,57 +201,122 @@ class KecrekanController extends ChangeNotifier {
     return ray.origin.x + ray.direction.x * t;
   }
 
-  /// Taps the bead under the pointer. Counting is a tap on any bead of the
-  /// right-hand group; tapping a counted bead sends one back.
-  int? tapAt(Offset local, Size size) {
-    final bead = beadAt(local, size);
-    if (bead == null) return null;
-    return toggleBead(bead);
+  /// Begin a physical grab on one bead. Preserve the finger-to-centre offset
+  /// so grabbing an edge does not snap the bead under the pointer.
+  void beginBeadDrag(KecrekanBead bead, double pointerWorldX) {
+    _draggedBead = bead;
+    _dragOffset = bead.x - pointerWorldX;
+    bead.velocity = 0;
   }
 
-  /// Moves exactly one bead on [bead]'s row: counted beads go back, uncounted
-  /// beads join the counted group.
-  int toggleBead(KecrekanBead bead) {
-    setRowCount(
-      bead.rod,
-      KecrekanMath.toggledCount(math.countFor(bead.rod), bead.index),
-    );
+  /// Move only the grabbed bead until it contacts a neighbour. Contact then
+  /// pushes the contiguous chain; an empty gap prevents movement propagating.
+  int? dragBeadTo(double pointerWorldX) {
+    final bead = _draggedBead;
+    if (bead == null) return null;
+    final oldTotal = total;
+    final target = (pointerWorldX + _dragOffset)
+        .clamp(KecrekanMath.leftX, KecrekanMath.rightX);
+    _moveWithContact(bead, target);
+    _syncRowCount(bead.rod);
+    _writeRodNodes(bead.rod);
+    if (total != oldTotal) notifyListeners();
     return math.countFor(bead.rod);
   }
 
-  void setRowCount(int rod, int count) {
-    final before = math.total;
+  void endBeadDrag() => _draggedBead = null;
+
+  /// A tap sends the selected bead to the opposite side of the counting
+  /// boundary. Neighbours move only if the selected bead physically contacts
+  /// them while travelling there.
+  int toggleBead(KecrekanBead bead) {
+    final destination = bead.x < 0
+        ? KecrekanMath.rightX
+        : KecrekanMath.leftX;
+    _moveWithContact(bead, destination);
+    _syncRowCount(bead.rod);
+    _writeRodNodes(bead.rod);
+    notifyListeners();
+    return math.countFor(bead.rod);
+  }
+
+  void _moveWithContact(KecrekanBead selected, double requestedX) {
+    final row = beads.where((bead) => bead.rod == selected.rod).toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    final selectedIndex = row.indexOf(selected);
+    if (selectedIndex < 0) return;
+
+    final oldX = selected.x;
+    selected.x = requestedX.clamp(
+      KecrekanMath.leftX,
+      KecrekanMath.rightX,
+    );
+    selected.velocity = 0;
+
+    if (selected.x < oldX) {
+      // Higher indices are physically to the left (smaller world X).
+      for (var i = selectedIndex + 1; i < row.length; i++) {
+        final neighbour = row[i];
+        final contactLimit = row[i - 1].x - KecrekanMath.spacing;
+        if (neighbour.x > contactLimit) {
+          neighbour.x = contactLimit;
+          neighbour.velocity = 0;
+        } else {
+          break; // Preserve the empty gap; beads beyond it stay still.
+        }
+      }
+      final overflow = KecrekanMath.leftX - row.last.x;
+      if (overflow > 0) {
+        for (var i = selectedIndex; i < row.length; i++) {
+          row[i].x += overflow;
+        }
+      }
+    } else if (selected.x > oldX) {
+      // Lower indices are physically to the right (larger world X).
+      for (var i = selectedIndex - 1; i >= 0; i--) {
+        final neighbour = row[i];
+        final contactLimit = row[i + 1].x + KecrekanMath.spacing;
+        if (neighbour.x < contactLimit) {
+          neighbour.x = contactLimit;
+          neighbour.velocity = 0;
+        } else {
+          break;
+        }
+      }
+      final overflow = row.first.x - KecrekanMath.rightX;
+      if (overflow > 0) {
+        for (var i = 0; i <= selectedIndex; i++) {
+          row[i].x -= overflow;
+        }
+      }
+    }
+
+    for (final bead in row) {
+      bead.x = bead.x.clamp(KecrekanMath.leftX, KecrekanMath.rightX);
+    }
+  }
+
+  void _syncRowCount(int rod) {
+    final count = beads
+        .where((bead) => bead.rod == rod && bead.x < 0)
+        .length;
     math.setCount(rod, count);
-    if (math.total != before) notifyListeners();
   }
 
-  void addToRow(int rod, int delta) {
-    setRowCount(rod, math.countFor(rod) + delta);
+  void _writeRodNodes(int rod) {
+    for (final bead in beads.where((bead) => bead.rod == rod)) {
+      bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
+    }
   }
 
-  /// Springs every bead toward the position its row's count implies.
+  /// Physical positions are authoritative. Never spring siblings toward
+  /// positions derived from a row count.
   void tick(Duration elapsed, double deltaSeconds) {
     if (!ready) return;
-    final dt = deltaSeconds.clamp(0.0, 0.05);
-    if (dt <= 0) return;
     for (final bead in beads) {
-      final target = KecrekanMath.beadX(bead.index, math.countFor(bead.rod));
-      final dx = target - bead.x;
-      if (dx.abs() < 0.0015 && bead.velocity.abs() < 0.02) {
-        if (bead.x != target) {
-          bead.x = target;
-          bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
-        }
-        continue;
+      if (bead.node.position.x != bead.x) {
+        bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
       }
-      // Near-critical damping: the bead arrives without bouncing into its
-      // neighbour, and the velocity ceiling keeps a fast flick from jumping
-      // past a slot in one frame.
-      bead.velocity += dx * 260 * dt;
-      bead.velocity *= dm.exp(-31 * dt);
-      bead.velocity = bead.velocity.clamp(-12.0, 12.0);
-      bead.x += bead.velocity * dt;
-      bead.node.position = vm.Vector3(bead.x, bead.y, bead.z);
     }
   }
 
