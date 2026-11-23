@@ -214,7 +214,7 @@ def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | N
     # ornaments: keep the silhouette readable and leave the full width for play.
     parts = [
         cube("Frame_TopRail", (0.0, 0.0, 1.55), (1.98, 0.38, 0.18), mats["glass"], col, bevel=0.075),
-        cube("Frame_BottomRail", (0.0, 0.0, -1.55), (2.53, 0.38, 0.18), mats["glass"], col, bevel=0.075),
+        cube("Frame_BottomRail", (0.0, 0.0, -1.55), (1.98, 0.38, 0.18), mats["glass"], col, bevel=0.075),
         cube("Frame_LeftPost", (-0.90, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
         cube("Frame_RightPost", (0.90, 0.0, 0.0), (0.18, 0.38, 3.20), mats["glass"], col, bevel=0.075),
     ]
@@ -223,7 +223,7 @@ def create_frame(mats: dict[str, bpy.types.Material], glass: bpy.types.Image | N
     # without creating another high-contrast border around every bead.
     parts.extend([
         cube("Frame_TopAccent", (0.0, -0.198, 1.425), (1.62, 0.025, 0.025), mats["gold"], col, bevel=0.01),
-        cube("Frame_BottomAccent", (0.0, -0.198, -1.425), (2.17, 0.025, 0.025), mats["gold"], col, bevel=0.01),
+        cube("Frame_BottomAccent", (0.0, -0.198, -1.425), (1.62, 0.025, 0.025), mats["gold"], col, bevel=0.01),
     ])
 
     root["asset"] = "math-ocean-kecrekan"
