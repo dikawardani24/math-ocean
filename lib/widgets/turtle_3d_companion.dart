@@ -23,8 +23,10 @@ class Turtle3DCompanion extends StatelessWidget {
       child: SceneView.declarative(
         key: ValueKey(animation),
         camera: PerspectiveCamera(
-          position: vm.Vector3(0, -5.1, 2.05),
-          target: vm.Vector3(0, -.15, .08),
+          // glTF uses Y-up and -Z-forward. The Blender source is Z-up,
+          // so using a negative Y camera position looked underneath Tala.
+          position: vm.Vector3(0, 1.65, -5.1),
+          target: vm.Vector3(0, .18, 0),
           fovRadiansY: 39 * 3.141592653589793 / 180,
           fovNear: .05,
           fovFar: 30,
