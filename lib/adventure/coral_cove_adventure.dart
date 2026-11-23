@@ -38,7 +38,9 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   final Set<int> _collectedSnacks = {};
   bool _completed = false;
   bool _celebrating = false;
-  String _dialogue = 'Welcome to Coral Cove! Tap the floating seagrass to help feed our turtle friend.';
+  bool _turtleEncountered = false;
+  bool _clownfishEncountered = false;
+  String _dialogue = 'Look around the reef. Tap a sea friend to see what it does!';
 
   @override
   void initState() {
@@ -84,6 +86,29 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     AudioService.instance.speak(text);
   }
 
+  void _encounterTurtle() {
+    final firstEncounter = !_turtleEncountered;
+    setState(() => _turtleEncountered = true);
+    if (firstEncounter) {
+      ProgressScope.read(context).discoverCreature(_turtle.id);
+      _speak(_turtle.encounterLines.first);
+    } else {
+      _speak(_turtle.encounterLines[1]);
+    }
+  }
+
+  void _encounterClownfish() {
+    final clownfish = creatureById('clownfish')!;
+    final firstEncounter = !_clownfishEncountered;
+    setState(() => _clownfishEncountered = true);
+    if (firstEncounter) {
+      ProgressScope.read(context).discoverCreature(clownfish.id);
+      _speak(clownfish.encounterLines.first);
+    } else {
+      _speak(clownfish.encounterLines.last);
+    }
+  }
+
   void _collectSnack(int index) {
     if (_collectedSnacks.contains(index) || _completed) return;
     setState(() {
@@ -123,14 +148,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       emoji: '🐢',
     );
     progress.recordSuccess(mission, stars: 3, firstTry: true);
-    progress.discoverCreature(_turtle.id);
-    progress.discoverCreature('clownfish');
     progress.completeAdventure(_adventureId);
     progress.addPearls(1);
 
     AudioService.instance.sfx('mission_complete');
     Feel.success();
-    _speak('Amazing! The turtle is so happy and full. You discovered the Green Sea Turtle!');
+    _speak('Amazing! You helped the turtle find her seagrass. What else can you discover in the reef?');
   }
 
   @override
@@ -167,12 +190,44 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                           return Positioned(
                             left: MediaQuery.of(context).size.width * 0.35 + x,
                             top: 40 + y,
-                            child: GestureDetector(
-                              onTap: () => _speak(_turtle.encounterLines.first),
-                              child: const Text('🐢', style: TextStyle(fontSize: 64)),
+                            child: TurtleCompanion(
+                              size: 112,
+                              cheering: _completed,
+                              onTap: _encounterTurtle,
                             ),
                           );
                         },
+                      ),
+
+                      // A clownfish peeks out of its anemone. Discovery is
+                      // recorded only when the child chooses to meet it.
+                      Positioned(
+                        left: MediaQuery.of(context).size.width * 0.12,
+                        top: 176,
+                        child: GestureDetector(
+                          onTap: _encounterClownfish,
+                          child: SizedBox(
+                            width: 104,
+                            height: 104,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Positioned(
+                                  bottom: 0,
+                                  child: Text('🪸', style: TextStyle(fontSize: 66)),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 4,
+                                  child: Text(
+                                    _clownfishEncountered ? '🐠' : '🐠',
+                                    style: const TextStyle(fontSize: 42),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
 
                       // Floating seagrass items in the reef
