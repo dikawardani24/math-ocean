@@ -171,8 +171,8 @@ class _Turtle3DCompanionState extends State<Turtle3DCompanion>
     with SingleTickerProviderStateMixin {
   static const double _stepSeconds = 1 / 30;
   static const double _fovY = 34 * math.pi / 180;
-  static final vm.Vector3 _cameraPosition = vm.Vector3(.55, .72, 2.85);
-  static final vm.Vector3 _cameraTarget = vm.Vector3(0, .02, 0);
+  static final vm.Vector3 _cameraPosition = vm.Vector3(-0.55, 1.05, -4.05);
+  static final vm.Vector3 _cameraTarget = vm.Vector3(0, .20, 0);
   static const double _depthHalfWorld = .30;
 
   final GlobalKey _areaKey = GlobalKey();
