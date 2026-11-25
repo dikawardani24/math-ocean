@@ -12,11 +12,11 @@ import '../kecrekan/kecrekan_controller.dart';
 import '../kecrekan/kecrekan_math.dart';
 import '../kecrekan/kecrekan_stage.dart';
 import '../theme.dart';
+import '../turtle/turtle_behavior.dart';
 import '../widgets/coral_cove_3d_backdrop.dart';
 import '../widgets/turtle_3d_companion.dart';
 import '../widgets/turtle_companion.dart' show SpeechBubble;
 import '../widgets/ui_kit.dart';
-
 
 enum _CoralStep { greeting, counting, collecting, feeding, discovery }
 
@@ -30,9 +30,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     with TickerProviderStateMixin {
   static int? _lastTarget;
   late final OceanCreature _turtle;
-  late final AnimationController _swim;
   late final AnimationController _pulse;
   late final KecrekanController _kecrekan;
+  late final Turtle3DCompanionController _feedingTurtle;
+  final GlobalKey _feedAreaKey = GlobalKey();
   int _target = 3;
   final Set<int> _collected = {};
   _CoralStep _step = _CoralStep.greeting;
@@ -50,8 +51,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       initialCount: 0,
       activeRowCount: KecrekanMath.rowsForChallenge(start: 0, target: _target),
     );
-    _swim = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+    _feedingTurtle = Turtle3DCompanionController();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
     _kecrekan.addListener(_onBeadsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) AudioService.instance.speak(_dialogue);
@@ -62,7 +66,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   void dispose() {
     _kecrekan.removeListener(_onBeadsChanged);
     _kecrekan.dispose();
-    _swim.dispose();
+    _feedingTurtle.dispose();
     _pulse.dispose();
     AudioService.instance.stopSpeaking();
     super.dispose();
@@ -76,7 +80,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
 
   void _startCounting() {
     setState(() => _step = _CoralStep.counting);
-    _say('We need ' + _target.toString() + ' pieces of seagrass. Make that number on the Kecrekan!');
+    _say(
+      'We need ' +
+          _target.toString() +
+          ' pieces of seagrass. Make that number on the Kecrekan!',
+    );
   }
 
   void _onBeadsChanged() {
@@ -86,7 +94,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       setState(() => _step = _CoralStep.collecting);
       Feel.success();
       AudioService.instance.sfx('mission_complete');
-      _say('That is ' + _target.toString() + '! Now find the seagrass around the reef.');
+      _say(
+        'That is ' +
+            _target.toString() +
+            '! Now find the seagrass around the reef.',
+      );
     } else if (total > _target) {
       _say('Oops, that is too many. Slide a bead back.');
     }
@@ -109,63 +121,97 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   final Set<int> _fedGrass = {};
   int? _feedingGrassIndex;
   bool _isEating = false;
-  bool _biteFlying = false;
-  bool _biteAtMouth = false;
+  bool _waitingForTurtle = false;
   bool _finishingFeed = false;
+  Offset? _foodDropLocal;
+  Offset? _foodMouthLocal;
+  Offset? _lastDragGlobal;
 
-  void _feedOne(int grassIndex) {
-    // Only one piece may enter the turtle's mouth at a time. Keep the
-    // basket item visible until the complete bite animation has finished.
+  void _feedOne(int grassIndex, Offset globalDrop) {
+    // One bite at a time. The basket keeps the piece until chewing completes.
     if (_step != _CoralStep.feeding ||
         _isEating ||
-        _biteFlying ||
-        _biteAtMouth ||
+        _waitingForTurtle ||
         _finishingFeed ||
         _fedGrass.contains(grassIndex)) {
       return;
     }
 
+    final box = _feedAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    // Move Tala toward the food that was actually dropped, then place the
+    // token at the nearest point her body can reach (not under the labels).
+    final clampedGlobal =
+        _feedingTurtle.clampGlobalToSwimArea(globalDrop) ?? globalDrop;
+    if (!_feedingTurtle.feedAtGlobal(globalDrop)) return;
+
     setState(() {
       _feedingGrassIndex = grassIndex;
-      _biteFlying = true;
-      _biteAtMouth = false;
+      _waitingForTurtle = true;
+      _foodDropLocal = box.globalToLocal(clampedGlobal);
+      _foodMouthLocal = null;
+    });
+    AudioService.instance.sfx('bead_slide');
+  }
+
+  /// Called by the turtle widget only after she has physically arrived and
+  /// turned toward the seagrass. Chewing starts here, not at drop time.
+  void _onFoodReached() {
+    if (!mounted || _step != _CoralStep.feeding || !_waitingForTurtle) return;
+    final grassIndex = _feedingGrassIndex;
+    if (grassIndex == null) return;
+
+    final box = _feedAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final mouthGlobal = _feedingTurtle.mouthGlobalPosition;
+    final mouthLocal = box != null && mouthGlobal != null
+        ? box.globalToLocal(mouthGlobal)
+        : _foodDropLocal;
+
+    setState(() {
+      _waitingForTurtle = false;
+      _isEating = true;
+      _foodMouthLocal = mouthLocal;
     });
     AudioService.instance.sfx('bead_slide');
 
-    // The grass visibly travels from the drop zone to Tala's mouth first.
-    Future<void>.delayed(const Duration(milliseconds: 480), () {
-      if (!mounted || _step != _CoralStep.feeding) return;
-      setState(() {
-        _biteFlying = false;
-        _biteAtMouth = true;
-        _isEating = true;
-      });
-
-      // Keep the bite at her mouth while the jaw and flippers chew.
-      Future<void>.delayed(const Duration(milliseconds: 1150), () {
-        if (!mounted || _step != _CoralStep.feeding) return;
-        setState(() {
-          _fedGrass.add(grassIndex);
-          _feedingGrassIndex = null;
-          _biteAtMouth = false;
-          _isEating = false;
-        });
-      Feel.success();
-
-      if (_fedGrass.length == _target) {
-        setState(() => _finishingFeed = true);
-        _say('Munch, munch! My tummy is full. Thank you, friend!');
-        Future<void>.delayed(const Duration(milliseconds: 900), () {
-          if (mounted) _completeFeeding();
-        });
-      } else {
-        final remaining = _target - _fedGrass.length;
-        _say(remaining == 1
-            ? 'Crunch! That was tasty. One more piece, please!'
-            : 'Crunch, crunch! That was tasty. $remaining more pieces!');
+    // Keep the bite at her mouth while the chew animation plays. The piece is
+    // only counted and removed after this timer completes.
+    Future<void>.delayed(const Duration(milliseconds: 1150), () {
+      if (!mounted ||
+          _step != _CoralStep.feeding ||
+          _feedingGrassIndex != grassIndex) {
+        return;
       }
-      });
+      _finishBite(grassIndex);
     });
+  }
+
+  void _finishBite(int grassIndex) {
+    _feedingTurtle.finishFeeding();
+    setState(() {
+      _fedGrass.add(grassIndex);
+      _feedingGrassIndex = null;
+      _isEating = false;
+      _foodDropLocal = null;
+      _foodMouthLocal = null;
+    });
+    Feel.success();
+
+    if (_fedGrass.length == _target) {
+      setState(() => _finishingFeed = true);
+      _say('Munch, munch! My tummy is full. Thank you, friend!');
+      Future<void>.delayed(const Duration(milliseconds: 900), () {
+        if (mounted) _completeFeeding();
+      });
+    } else {
+      final remaining = _target - _fedGrass.length;
+      _say(
+        remaining == 1
+            ? 'Crunch! That was tasty. One more piece, please!'
+            : 'Crunch, crunch! That was tasty. $remaining more pieces!',
+      );
+    }
   }
 
   void _completeFeeding() {
@@ -190,7 +236,9 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     progress.addPearls(1);
     Feel.success();
     AudioService.instance.sfx('mission_complete');
-    _say('Sea turtles graze on seagrass and help keep underwater meadows healthy!');
+    _say(
+      'Sea turtles graze on seagrass and help keep underwater meadows healthy!',
+    );
   }
 
   @override
@@ -232,21 +280,24 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedBuilder(
-            animation: _swim,
-            builder: (context, child) => Transform.translate(
-              offset: Offset(0, math.sin(_swim.value * math.pi * 2) * 8),
-              child: child,
-            ),
-            child: GestureDetector(
+          SizedBox(
+            width: double.infinity,
+            height: 288,
+            child: Turtle3DCompanion(
+              size: 190,
+              expand: true,
+              swimPadding: const EdgeInsets.all(8),
               onTap: () => AudioService.instance.speak(_dialogue),
-              child: const Turtle3DCompanion(size: 244),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           SpeechBubble(message: _dialogue),
           const SizedBox(height: 24),
-          BigButton(label: 'Help the turtle!', icon: Icons.favorite_rounded, onTap: _startCounting),
+          BigButton(
+            label: 'Help the turtle!',
+            icon: Icons.favorite_rounded,
+            onTap: _startCounting,
+          ),
         ],
       ),
     ),
@@ -260,19 +311,43 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: OceanColors.shell, borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+            color: OceanColors.shell,
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Column(
             children: [
-              const Text('HOW MUCH SEAGRASS?', style: TextStyle(color: OceanColors.inkSoft, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              const Text(
+                'HOW MUCH SEAGRASS?',
+                style: TextStyle(
+                  color: OceanColors.inkSoft,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
               const SizedBox(height: 6),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_target, (_) => const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: SizedBox(width: 26, height: 36, child: CustomPaint(painter: _SeagrassPainter())),
-                )),
+                children: List.generate(
+                  _target,
+                  (_) => const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: SizedBox(
+                      width: 26,
+                      height: 36,
+                      child: CustomPaint(painter: _SeagrassPainter()),
+                    ),
+                  ),
+                ),
               ),
-              Text('Make ' + _target.toString() + ' on your Kecrekan', style: const TextStyle(color: OceanColors.ink, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(
+                'Make ' + _target.toString() + ' on your Kecrekan',
+                style: const TextStyle(
+                  color: OceanColors.ink,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
         ),
@@ -296,31 +371,49 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
     builder: (context, constraints) {
       const size = 68.0;
       const positions = [
-        Offset(.17, .10), Offset(.76, .04), Offset(.22, .70),
-        Offset(.80, .66), Offset(.50, .38),
+        Offset(.17, .10),
+        Offset(.76, .04),
+        Offset(.22, .70),
+        Offset(.80, .66),
+        Offset(.50, .38),
       ];
       final freeHeight = math.max(0.0, constraints.maxHeight - 224 - size);
       return Stack(
         children: [
           Positioned(
-            left: 10, right: 10, top: 4,
+            left: 10,
+            right: 10,
+            top: 4,
             child: Column(
               children: [
-                SpeechBubble(message: _dialogue, onTap: () => AudioService.instance.speak(_dialogue)),
+                SpeechBubble(
+                  message: _dialogue,
+                  onTap: () => AudioService.instance.speak(_dialogue),
+                ),
                 const SizedBox(height: 8),
                 _FoodBasket(count: _collected.length, target: _target),
               ],
             ),
           ),
           Positioned(
-            bottom: 10,
-            left: constraints.maxWidth * .34,
-            child: Turtle3DCompanion(size: 158),
+            bottom: 6,
+            left: math.max(8, constraints.maxWidth * .5 - 125),
+            width: 250,
+            height: 176,
+            child: const Turtle3DCompanion(
+              size: 140,
+              expand: true,
+              autonomy: TurtleAutonomy.calm,
+              swimPadding: EdgeInsets.all(6),
+            ),
           ),
           for (var i = 0; i < _target; i++)
             if (!_collected.contains(i))
               Positioned(
-                left: (constraints.maxWidth * positions[i].dx - size / 2).clamp(8.0, math.max(8.0, constraints.maxWidth - size - 8)),
+                left: (constraints.maxWidth * positions[i].dx - size / 2).clamp(
+                  8.0,
+                  math.max(8.0, constraints.maxWidth - size - 8),
+                ),
                 top: 132 + freeHeight * positions[i].dy,
                 width: size,
                 height: size,
@@ -341,7 +434,11 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                         boxShadow: oceanShadow(blur: 14, y: 5),
                       ),
                       alignment: Alignment.center,
-                      child: const SizedBox(width: 48, height: 48, child: CustomPaint(painter: _SeagrassPainter())),
+                      child: const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CustomPaint(painter: _SeagrassPainter()),
+                      ),
                     ),
                   ),
                 ),
@@ -350,6 +447,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       );
     },
   );
+
+  Offset? get _foodTokenLocal {
+    if (_waitingForTurtle) return _foodDropLocal;
+    if (_isEating) return _foodMouthLocal ?? _foodDropLocal;
+    return null;
+  }
 
   Widget _feeding() => Padding(
     key: const ValueKey('feeding'),
@@ -360,16 +463,18 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
         const SizedBox(height: 12),
         Expanded(
           child: DragTarget<int>(
-            onWillAccept: (index) =>
-                index != null &&
+            onWillAcceptWithDetails: (details) =>
                 !_isEating &&
-                !_biteFlying &&
-                !_biteAtMouth &&
+                !_waitingForTurtle &&
                 !_finishingFeed &&
-                !_fedGrass.contains(index),
-            onAccept: _feedOne,
+                !_fedGrass.contains(details.data),
+            onAcceptWithDetails: (details) => _feedOne(
+              details.data,
+              _lastDragGlobal ?? details.offset + const Offset(27, 27),
+            ),
             builder: (context, candidateData, rejectedData) {
               final hovering = candidateData.isNotEmpty;
+              final token = _foodTokenLocal;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 width: double.infinity,
@@ -379,75 +484,83 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                       : Colors.white.withValues(alpha: .06),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: hovering ? OceanColors.sunny : OceanColors.mint.withValues(alpha: .45),
+                    color: hovering
+                        ? OceanColors.sunny
+                        : OceanColors.mint.withValues(alpha: .45),
                     width: hovering ? 4 : 2,
                   ),
                 ),
                 child: Stack(
+                  key: _feedAreaKey,
                   children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                    AnimatedScale(
-                      scale: hovering ? 1.03 : 1,
-                      duration: const Duration(milliseconds: 180),
+                    Positioned.fill(
                       child: Turtle3DCompanion(
-                        size: 220,
-                        animation: _isEating
-                            ? 'Eat_Chew'
-                            : _finishingFeed
-                                ? 'Happy_Reaction'
-                                : 'Idle_Swim',
-                        loop: !_isEating && !_finishingFeed,
+                        controller: _feedingTurtle,
+                        size: 175,
+                        expand: true,
+                        autonomy: TurtleAutonomy.calm,
+                        swimPadding: const EdgeInsets.fromLTRB(6, 6, 6, 82),
+                        onFoodReached: _onFoodReached,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: hovering ? OceanColors.sunny : OceanColors.shell,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Text(
-                        _finishingFeed
-                            ? 'YUMMY! TUMMY FULL!'
-                            : _isEating
-                                ? 'NOM NOM NOM...'
-                                : hovering
-                                    ? 'LET GO TO FEED ME!'
-                                    : 'DROP THE SEAGRASS HERE',
-                        style: const TextStyle(
-                          color: OceanColors.ink,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: .5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${_fedGrass.length} / $_target pieces eaten',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                      ),
-                    ),
-                      ],
-                    ),
-                    if (_biteFlying || _biteAtMouth)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: AnimatedAlign(
-                            duration: Duration(milliseconds: _biteFlying ? 460 : 120),
-                            curve: Curves.easeInCubic,
-                            alignment: _biteFlying
-                                ? const Alignment(0, .82)
-                                : const Alignment(0, -.24),
-                            child: AnimatedScale(
-                              duration: const Duration(milliseconds: 220),
-                              scale: _biteAtMouth ? .48 : 1,
-                              child: _SeagrassToken(size: 54, lifted: true),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 9,
                             ),
+                            decoration: BoxDecoration(
+                              color: hovering
+                                  ? OceanColors.sunny
+                                  : OceanColors.shell,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Text(
+                              _finishingFeed
+                                  ? 'YUMMY! TUMMY FULL!'
+                                  : _isEating
+                                  ? 'NOM NOM NOM...'
+                                  : hovering
+                                  ? 'LET GO TO FEED ME!'
+                                  : _waitingForTurtle
+                                  ? 'TALA IS SWIMMING TO IT...'
+                                  : 'DROP THE SEAGRASS HERE',
+                              style: const TextStyle(
+                                color: OceanColors.ink,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: .5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${_fedGrass.length} / $_target pieces eaten',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (token != null)
+                      AnimatedPositioned(
+                        duration: Duration(milliseconds: _isEating ? 220 : 120),
+                        curve: Curves.easeInOut,
+                        left: token.dx - 27,
+                        top: token.dy - 27,
+                        child: IgnorePointer(
+                          child: AnimatedScale(
+                            duration: const Duration(milliseconds: 220),
+                            scale: _isEating ? .5 : 1,
+                            child: _SeagrassToken(size: 54, lifted: true),
                           ),
                         ),
                       ),
@@ -498,7 +611,12 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                     if (!_fedGrass.contains(i))
                       Draggable<int>(
                         data: i,
-                        maxSimultaneousDrags: (_isEating || _biteFlying || _biteAtMouth || _finishingFeed) ? 0 : 1,
+                        maxSimultaneousDrags:
+                            (_isEating || _waitingForTurtle || _finishingFeed)
+                            ? 0
+                            : 1,
+                        onDragUpdate: (details) =>
+                            _lastDragGlobal = details.globalPosition,
                         feedback: Material(
                           color: Colors.transparent,
                           child: _SeagrassToken(size: 62, lifted: true),
@@ -523,8 +641,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
               Text(
                 _isEating
                     ? 'Wait for the turtle to finish chewing!'
+                    : _waitingForTurtle
+                    ? 'Tala is on her way to the seagrass...'
                     : 'Drag one piece at a time to the turtle',
-                style: TextStyle(
+                style: const TextStyle(
                   color: OceanColors.inkSoft,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
@@ -544,26 +664,62 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Turtle3DCompanion(size: 226, animation: 'Happy_Reaction', loop: false),
+          SizedBox(
+            width: double.infinity,
+            height: 252,
+            child: Turtle3DCompanion(
+              size: 185,
+              expand: true,
+              autonomy: TurtleAutonomy.calm,
+              celebrateOnMount: true,
+            ),
+          ),
           const SizedBox(height: 10),
           SpeechBubble(message: _dialogue),
           const SizedBox(height: 14),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: OceanColors.shell, borderRadius: BorderRadius.circular(22)),
+            decoration: BoxDecoration(
+              color: OceanColors.shell,
+              borderRadius: BorderRadius.circular(22),
+            ),
             child: Column(
               children: [
-                const Text('🐢  OCEAN DISCOVERY', style: TextStyle(color: OceanColors.inkSoft, fontWeight: FontWeight.w900)),
+                const Text(
+                  '🐢  OCEAN DISCOVERY',
+                  style: TextStyle(
+                    color: OceanColors.inkSoft,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text(_turtle.name, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: OceanColors.ink, fontWeight: FontWeight.w900)),
+                Text(
+                  _turtle.name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: OceanColors.ink,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                Text(_turtle.habitat + '\nSea turtles graze on seagrass and help keep underwater meadows healthy.', textAlign: TextAlign.center, style: const TextStyle(color: OceanColors.ink, fontWeight: FontWeight.w600, height: 1.35)),
+                Text(
+                  _turtle.habitat + '\nSea turtles graze on seagrass and help keep underwater meadows healthy.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: OceanColors.ink,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          BigButton(label: 'Explore the reef', icon: Icons.explore_rounded, onTap: () => Navigator.of(context).pop(true)),
+          BigButton(
+            label: 'Explore the reef',
+            icon: Icons.explore_rounded,
+            onTap: () => Navigator.of(context).pop(true),
+          ),
         ],
       ),
     ),
@@ -604,8 +760,21 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Coral Cove', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: OceanColors.foam, fontWeight: FontWeight.w900)),
-                Text(label, style: const TextStyle(color: OceanColors.mint, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(
+                  'Coral Cove',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: OceanColors.foam,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: OceanColors.mint,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),
@@ -613,8 +782,8 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
             label: _step == _CoralStep.collecting
                 ? _collected.length.toString() + '/' + _target.toString()
                 : _step == _CoralStep.feeding
-                    ? _fedGrass.length.toString() + '/' + _target.toString()
-                    : _target.toString() + ' 🌿',
+                ? _fedGrass.length.toString() + '/' + _target.toString()
+                : _target.toString() + ' 🌿',
             emoji: '🐢',
             compact: true,
             color: OceanColors.mint,
@@ -660,14 +829,21 @@ class _SeagrassToken extends StatelessWidget {
 }
 
 class _FoodBasket extends StatelessWidget {
-  const _FoodBasket({required this.count, required this.target, this.large = false});
+  const _FoodBasket({
+    required this.count,
+    required this.target,
+    this.large = false,
+  });
   final int count;
   final int target;
   final bool large;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.symmetric(horizontal: large ? 24 : 16, vertical: large ? 16 : 9),
+    padding: EdgeInsets.symmetric(
+      horizontal: large ? 24 : 16,
+      vertical: large ? 16 : 9,
+    ),
     decoration: BoxDecoration(
       color: OceanColors.shell,
       borderRadius: BorderRadius.circular(large ? 24 : 18),
@@ -682,8 +858,23 @@ class _FoodBasket extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$count / $target', style: TextStyle(color: OceanColors.ink, fontSize: large ? 25 : 18, fontWeight: FontWeight.w900)),
-            Text('SEAGRASS', style: TextStyle(color: OceanColors.inkSoft, fontSize: large ? 11 : 9, fontWeight: FontWeight.w900, letterSpacing: .8)),
+            Text(
+              '$count / $target',
+              style: TextStyle(
+                color: OceanColors.ink,
+                fontSize: large ? 25 : 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              'SEAGRASS',
+              style: TextStyle(
+                color: OceanColors.inkSoft,
+                fontSize: large ? 11 : 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: .8,
+              ),
+            ),
           ],
         ),
       ],
@@ -773,10 +964,7 @@ class _AnemonePainter extends CustomPainter {
       height: size.height * 0.25,
     );
     canvas.drawOval(base, Paint()..color = const Color(0xFFE77F91));
-    canvas.drawOval(
-      base.deflate(5),
-      Paint()..color = const Color(0xFFFFB0A7),
-    );
+    canvas.drawOval(base.deflate(5), Paint()..color = const Color(0xFFFFB0A7));
   }
 
   @override
@@ -791,17 +979,34 @@ class _ClownfishPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final body = Path()
       ..moveTo(size.width * 0.12, size.height * 0.5)
-      ..quadraticBezierTo(size.width * 0.34, -size.height * 0.05, size.width * 0.78, size.height * 0.34)
-      ..quadraticBezierTo(size.width * 0.96, size.height * 0.5, size.width * 0.78, size.height * 0.66)
-      ..quadraticBezierTo(size.width * 0.34, size.height * 1.05, size.width * 0.12, size.height * 0.5);
-    canvas.drawPath(
-      body,
-      Paint()..color = const Color(0xFFFF8A28),
-    );
+      ..quadraticBezierTo(
+        size.width * 0.34,
+        -size.height * 0.05,
+        size.width * 0.78,
+        size.height * 0.34,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.96,
+        size.height * 0.5,
+        size.width * 0.78,
+        size.height * 0.66,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.34,
+        size.height * 1.05,
+        size.width * 0.12,
+        size.height * 0.5,
+      );
+    canvas.drawPath(body, Paint()..color = const Color(0xFFFF8A28));
     final tail = Path()
       ..moveTo(size.width * 0.14, size.height * 0.5)
       ..lineTo(0, size.height * 0.18)
-      ..quadraticBezierTo(size.width * 0.04, size.height * 0.5, 0, size.height * 0.82)
+      ..quadraticBezierTo(
+        size.width * 0.04,
+        size.height * 0.5,
+        0,
+        size.height * 0.82,
+      )
       ..close();
     canvas.drawPath(tail, Paint()..color = const Color(0xFFFFA33D));
     final stripe = Paint()
@@ -863,7 +1068,10 @@ class _ReefWorldBackdrop extends StatelessWidget {
           stops: [0, 0.3, 0.65, 1],
         ),
       ),
-      child: CustomPaint(painter: _ReefPainter(), child: const SizedBox.expand()),
+      child: CustomPaint(
+        painter: _ReefPainter(),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 }
@@ -873,7 +1081,8 @@ class _ReefPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sand = Paint()..color = const Color(0xFFD4B483).withValues(alpha: 0.4);
+    final sand = Paint()
+      ..color = const Color(0xFFD4B483).withValues(alpha: 0.4);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.5, size.height * 0.98),
@@ -886,7 +1095,11 @@ class _ReefPainter extends CustomPainter {
     final bubble = Paint()..color = Colors.white.withValues(alpha: 0.15);
     for (final x in [0.2, 0.45, 0.7, 0.85]) {
       canvas.drawCircle(Offset(size.width * x, size.height * 0.2), 5, bubble);
-      canvas.drawCircle(Offset(size.width * x + 15, size.height * 0.45), 8, bubble);
+      canvas.drawCircle(
+        Offset(size.width * x + 15, size.height * 0.45),
+        8,
+        bubble,
+      );
     }
   }
 
