@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../core/audio_service.dart';
 import '../core/feedback.dart';
@@ -81,9 +81,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
   void _startCounting() {
     setState(() => _step = _CoralStep.counting);
     _say(
-      'We need ' +
-          _target.toString() +
-          ' pieces of seagrass. Make that number on the Kecrekan!',
+      'We need $_target pieces of seagrass. Make that number on the Kecrekan!',
     );
   }
 
@@ -95,9 +93,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       Feel.success();
       AudioService.instance.sfx('mission_complete');
       _say(
-        'That is ' +
-            _target.toString() +
-            '! Now find the seagrass around the reef.',
+        'That is $_target! Now find the seagrass around the reef.',
       );
     } else if (total > _target) {
       _say('Oops, that is too many. Slide a bead back.');
@@ -114,7 +110,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
       setState(() => _step = _CoralStep.feeding);
       _say('You found all the seagrass! Take it to the turtle.');
     } else {
-      _say('You found ' + count.toString() + '! Keep looking.');
+      _say('You found $count! Keep looking.');
     }
   }
 
@@ -341,7 +337,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                 ),
               ),
               Text(
-                'Make ' + _target.toString() + ' on your Kecrekan',
+                'Make $_target on your Kecrekan',
                 style: const TextStyle(
                   color: OceanColors.ink,
                   fontSize: 16,
@@ -703,7 +699,7 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _turtle.habitat + '\nSea turtles graze on seagrass and help keep underwater meadows healthy.',
+                  '${_turtle.habitat}\nSea turtles graze on seagrass and help keep underwater meadows healthy.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: OceanColors.ink,
@@ -780,10 +776,10 @@ class _CoralCoveAdventureState extends State<CoralCoveAdventure>
           ),
           OceanPill(
             label: _step == _CoralStep.collecting
-                ? _collected.length.toString() + '/' + _target.toString()
+                ? '${_collected.length}/$_target'
                 : _step == _CoralStep.feeding
-                ? _fedGrass.length.toString() + '/' + _target.toString()
-                : _target.toString() + ' 🌿',
+                ? '${_fedGrass.length}/$_target'
+                : '$_target 🌿',
             emoji: '🐢',
             compact: true,
             color: OceanColors.mint,
@@ -832,8 +828,7 @@ class _FoodBasket extends StatelessWidget {
   const _FoodBasket({
     required this.count,
     required this.target,
-    this.large = false,
-  });
+  }) : large = false;
   final int count;
   final int target;
   final bool large;
@@ -922,187 +917,4 @@ class _SeagrassPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SeagrassPainter oldDelegate) => false;
-}
-
-class _AnemonePainter extends CustomPainter {
-  const _AnemonePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.76);
-    final tentacle = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-    for (var i = 0; i < 11; i++) {
-      final angle = math.pi + (math.pi * i / 10);
-      final start = Offset(
-        center.dx + math.cos(angle) * 10,
-        center.dy + math.sin(angle) * 4,
-      );
-      final end = Offset(
-        center.dx + math.cos(angle) * (size.width * 0.43),
-        center.dy + math.sin(angle) * (size.height * 0.67),
-      );
-      tentacle.color = i.isEven
-          ? const Color(0xFFFF8DAA)
-          : const Color(0xFFFFC0A5);
-      final path = Path()
-        ..moveTo(start.dx, start.dy)
-        ..quadraticBezierTo(
-          center.dx + math.cos(angle) * size.width * 0.34 + (i % 3 - 1) * 5,
-          center.dy + math.sin(angle) * size.height * 0.38,
-          end.dx,
-          end.dy,
-        );
-      canvas.drawPath(path, tentacle);
-      canvas.drawCircle(end, 3, Paint()..color = tentacle.color);
-    }
-    final base = Rect.fromCenter(
-      center: Offset(center.dx, center.dy + 7),
-      width: size.width * 0.46,
-      height: size.height * 0.25,
-    );
-    canvas.drawOval(base, Paint()..color = const Color(0xFFE77F91));
-    canvas.drawOval(base.deflate(5), Paint()..color = const Color(0xFFFFB0A7));
-  }
-
-  @override
-  bool shouldRepaint(covariant _AnemonePainter oldDelegate) => false;
-}
-
-class _ClownfishPainter extends CustomPainter {
-  const _ClownfishPainter({required this.discovered});
-  final bool discovered;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final body = Path()
-      ..moveTo(size.width * 0.12, size.height * 0.5)
-      ..quadraticBezierTo(
-        size.width * 0.34,
-        -size.height * 0.05,
-        size.width * 0.78,
-        size.height * 0.34,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.96,
-        size.height * 0.5,
-        size.width * 0.78,
-        size.height * 0.66,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.34,
-        size.height * 1.05,
-        size.width * 0.12,
-        size.height * 0.5,
-      );
-    canvas.drawPath(body, Paint()..color = const Color(0xFFFF8A28));
-    final tail = Path()
-      ..moveTo(size.width * 0.14, size.height * 0.5)
-      ..lineTo(0, size.height * 0.18)
-      ..quadraticBezierTo(
-        size.width * 0.04,
-        size.height * 0.5,
-        0,
-        size.height * 0.82,
-      )
-      ..close();
-    canvas.drawPath(tail, Paint()..color = const Color(0xFFFFA33D));
-    final stripe = Paint()
-      ..color = const Color(0xFFFFF7E8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.105;
-    for (final x in [0.34, 0.68]) {
-      canvas.drawLine(
-        Offset(size.width * x, size.height * 0.13),
-        Offset(size.width * x, size.height * 0.87),
-        stripe,
-      );
-    }
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.82, size.height * 0.43),
-        width: 5,
-        height: 5,
-      ),
-      Paint()..color = const Color(0xFF172B35),
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.835, size.height * 0.415),
-      1.2,
-      Paint()..color = Colors.white,
-    );
-    if (discovered) {
-      final sparkle = Paint()
-        ..color = const Color(0xFFFFE58A)
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round;
-      final point = Offset(size.width * 0.9, size.height * 0.12);
-      canvas.drawLine(point.translate(-4, 0), point.translate(4, 0), sparkle);
-      canvas.drawLine(point.translate(0, -4), point.translate(0, 4), sparkle);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ClownfishPainter oldDelegate) =>
-      discovered != oldDelegate.discovered;
-}
-
-class _ReefWorldBackdrop extends StatelessWidget {
-  const _ReefWorldBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF034F5C),
-            Color(0xFF068A94),
-            Color(0xFF0B5D68),
-            Color(0xFF022630),
-          ],
-          stops: [0, 0.3, 0.65, 1],
-        ),
-      ),
-      child: CustomPaint(
-        painter: _ReefPainter(),
-        child: const SizedBox.expand(),
-      ),
-    );
-  }
-}
-
-class _ReefPainter extends CustomPainter {
-  const _ReefPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final sand = Paint()
-      ..color = const Color(0xFFD4B483).withValues(alpha: 0.4);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.5, size.height * 0.98),
-        width: size.width * 1.3,
-        height: size.height * 0.22,
-      ),
-      sand,
-    );
-
-    final bubble = Paint()..color = Colors.white.withValues(alpha: 0.15);
-    for (final x in [0.2, 0.45, 0.7, 0.85]) {
-      canvas.drawCircle(Offset(size.width * x, size.height * 0.2), 5, bubble);
-      canvas.drawCircle(
-        Offset(size.width * x + 15, size.height * 0.45),
-        8,
-        bubble,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -41,6 +41,7 @@ dependencies:
   shared_preferences: ^2.5.6
   hooks: ^2.0.2
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../adventure/coral_cove_adventure.dart';
 import '../adventure/kelp_forest_adventure.dart';
@@ -12,7 +12,6 @@ import '../discovery/journal_screen.dart';
 import '../screens/jarimatika_screen.dart';
 import '../screens/rewards_screen.dart';
 import '../screens/settings_sheet.dart';
-import '../core/models.dart';
 import '../theme.dart';
 import '../widgets/turtle_companion.dart';
 import '../widgets/ui_kit.dart';
