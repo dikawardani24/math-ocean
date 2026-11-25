@@ -66,6 +66,8 @@ flutter:
     - assets/audio/sfx/
     - assets/audio/ambience/
     - assets/images/
+    - assets/3d/coral_cove/
+    - assets/3d/characters/
     - path: flutter_scene_generated/metal_ios/
       platforms:
         - ios
